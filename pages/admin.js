@@ -13,9 +13,14 @@ export default function AdminPage() {
   const [specs, setSpecs] = useState([]);
 
   const [developerName, setDeveloperName] = useState("");
+  const [editingDeveloperId, setEditingDeveloperId] = useState(null);
+
   const [categoryName, setCategoryName] = useState("");
+  const [editingCategoryId, setEditingCategoryId] = useState(null);
+
   const [siteName, setSiteName] = useState("");
   const [siteDeveloperId, setSiteDeveloperId] = useState("");
+  const [editingSiteId, setEditingSiteId] = useState(null);
 
   const [specTitle, setSpecTitle] = useState("");
   const [specBody, setSpecBody] = useState("");
@@ -41,31 +46,14 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (session) {
-      loadData();
-    }
+    if (session) loadData();
   }, [session]);
 
   const loadData = async () => {
-    const { data: devs } = await supabase
-      .from("developers")
-      .select("*")
-      .order("name");
-
-    const { data: cats } = await supabase
-      .from("categories")
-      .select("*")
-      .order("name");
-
-    const { data: sts } = await supabase
-      .from("sites")
-      .select("*")
-      .order("name");
-
-    const { data: spc } = await supabase
-      .from("specs")
-      .select("*")
-      .order("title");
+    const { data: devs } = await supabase.from("developers").select("*").order("name");
+    const { data: cats } = await supabase.from("categories").select("*").order("name");
+    const { data: sts } = await supabase.from("sites").select("*").order("name");
+    const { data: spc } = await supabase.from("specs").select("*").order("title");
 
     setDevelopers(devs || []);
     setCategories(cats || []);
@@ -86,56 +74,168 @@ export default function AdminPage() {
     await supabase.auth.signOut();
   };
 
-  const addDeveloper = async (e) => {
+  // Developers
+  const saveDeveloper = async (e) => {
     e.preventDefault();
-    const { error } = await supabase
-      .from("developers")
-      .insert([{ name: developerName }]);
+    let error;
+
+    if (editingDeveloperId) {
+      ({ error } = await supabase
+        .from("developers")
+        .update({ name: developerName })
+        .eq("id", editingDeveloperId));
+    } else {
+      ({ error } = await supabase
+        .from("developers")
+        .insert([{ name: developerName }]));
+    }
 
     if (error) {
       alert(error.message);
       return;
     }
 
+    resetDeveloperForm();
+    loadData();
+  };
+
+  const editDeveloper = (developer) => {
+    setEditingDeveloperId(developer.id);
+    setDeveloperName(developer.name || "");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const deleteDeveloper = async (id) => {
+    const confirmed = window.confirm(
+      "Delete this developer? Make sure no sites still rely on it."
+    );
+    if (!confirmed) return;
+
+    const { error } = await supabase.from("developers").delete().eq("id", id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    if (editingDeveloperId === id) resetDeveloperForm();
+    loadData();
+  };
+
+  const resetDeveloperForm = () => {
+    setEditingDeveloperId(null);
     setDeveloperName("");
-    loadData();
   };
 
-  const addCategory = async (e) => {
+  // Categories
+  const saveCategory = async (e) => {
     e.preventDefault();
-    const { error } = await supabase
-      .from("categories")
-      .insert([{ name: categoryName }]);
+    let error;
+
+    if (editingCategoryId) {
+      ({ error } = await supabase
+        .from("categories")
+        .update({ name: categoryName })
+        .eq("id", editingCategoryId));
+    } else {
+      ({ error } = await supabase
+        .from("categories")
+        .insert([{ name: categoryName }]));
+    }
 
     if (error) {
       alert(error.message);
       return;
     }
 
+    resetCategoryForm();
+    loadData();
+  };
+
+  const editCategory = (category) => {
+    setEditingCategoryId(category.id);
+    setCategoryName(category.name || "");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const deleteCategory = async (id) => {
+    const confirmed = window.confirm(
+      "Delete this category? Make sure no specs still rely on it."
+    );
+    if (!confirmed) return;
+
+    const { error } = await supabase.from("categories").delete().eq("id", id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    if (editingCategoryId === id) resetCategoryForm();
+    loadData();
+  };
+
+  const resetCategoryForm = () => {
+    setEditingCategoryId(null);
     setCategoryName("");
-    loadData();
   };
 
-  const addSite = async (e) => {
+  // Sites
+  const saveSite = async (e) => {
     e.preventDefault();
+    const payload = {
+      name: siteName,
+      developer_id: siteDeveloperId,
+    };
 
-    const { error } = await supabase.from("sites").insert([
-      {
-        name: siteName,
-        developer_id: siteDeveloperId,
-      },
-    ]);
+    let error;
+
+    if (editingSiteId) {
+      ({ error } = await supabase.from("sites").update(payload).eq("id", editingSiteId));
+    } else {
+      ({ error } = await supabase.from("sites").insert([payload]));
+    }
 
     if (error) {
       alert(error.message);
       return;
     }
 
+    resetSiteForm();
+    loadData();
+  };
+
+  const editSite = (site) => {
+    setEditingSiteId(site.id);
+    setSiteName(site.name || "");
+    setSiteDeveloperId(site.developer_id || "");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const deleteSite = async (id) => {
+    const confirmed = window.confirm(
+      "Delete this site? Make sure no specs still rely on it."
+    );
+    if (!confirmed) return;
+
+    const { error } = await supabase.from("sites").delete().eq("id", id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    if (editingSiteId === id) resetSiteForm();
+    loadData();
+  };
+
+  const resetSiteForm = () => {
+    setEditingSiteId(null);
     setSiteName("");
     setSiteDeveloperId("");
-    loadData();
   };
 
+  // Specs
   const saveSpec = async (e) => {
     e.preventDefault();
 
@@ -150,10 +250,7 @@ export default function AdminPage() {
     let error;
 
     if (editingSpecId) {
-      ({ error } = await supabase
-        .from("specs")
-        .update(payload)
-        .eq("id", editingSpecId));
+      ({ error } = await supabase.from("specs").update(payload).eq("id", editingSpecId));
     } else {
       ({ error } = await supabase.from("specs").insert([payload]));
     }
@@ -187,10 +284,7 @@ export default function AdminPage() {
       return;
     }
 
-    if (editingSpecId === id) {
-      resetSpecForm();
-    }
-
+    if (editingSpecId === id) resetSpecForm();
     loadData();
   };
 
@@ -207,6 +301,9 @@ export default function AdminPage() {
 
   const getCategoryName = (id) =>
     categories.find((category) => String(category.id) === String(id))?.name || "";
+
+  const getDeveloperName = (id) =>
+    developers.find((developer) => String(developer.id) === String(id))?.name || "";
 
   if (!session) {
     return (
@@ -299,35 +396,57 @@ export default function AdminPage() {
             marginBottom: 20,
           }}
         >
-          <form onSubmit={addDeveloper} style={cardStyle}>
-            <h2>Add Developer</h2>
+          <form onSubmit={saveDeveloper} style={cardStyle}>
+            <h2>{editingDeveloperId ? "Edit Developer" : "Add Developer"}</h2>
             <input
               value={developerName}
               onChange={(e) => setDeveloperName(e.target.value)}
               placeholder="Developer name"
               style={inputStyle}
             />
-            <button type="submit" style={buttonStyle}>
-              Save Developer
-            </button>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button type="submit" style={buttonStyle}>
+                {editingDeveloperId ? "Update Developer" : "Save Developer"}
+              </button>
+              {editingDeveloperId && (
+                <button
+                  type="button"
+                  onClick={resetDeveloperForm}
+                  style={{ ...buttonStyle, background: "#6b7280" }}
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
 
-          <form onSubmit={addCategory} style={cardStyle}>
-            <h2>Add Category</h2>
+          <form onSubmit={saveCategory} style={cardStyle}>
+            <h2>{editingCategoryId ? "Edit Category" : "Add Category"}</h2>
             <input
               value={categoryName}
               onChange={(e) => setCategoryName(e.target.value)}
               placeholder="Category name"
               style={inputStyle}
             />
-            <button type="submit" style={buttonStyle}>
-              Save Category
-            </button>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button type="submit" style={buttonStyle}>
+                {editingCategoryId ? "Update Category" : "Save Category"}
+              </button>
+              {editingCategoryId && (
+                <button
+                  type="button"
+                  onClick={resetCategoryForm}
+                  style={{ ...buttonStyle, background: "#6b7280" }}
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
         </div>
 
-        <form onSubmit={addSite} style={{ ...cardStyle, marginBottom: 20 }}>
-          <h2>Add Site</h2>
+        <form onSubmit={saveSite} style={{ ...cardStyle, marginBottom: 20 }}>
+          <h2>{editingSiteId ? "Edit Site" : "Add Site"}</h2>
           <input
             value={siteName}
             onChange={(e) => setSiteName(e.target.value)}
@@ -348,9 +467,20 @@ export default function AdminPage() {
             ))}
           </select>
 
-          <button type="submit" style={buttonStyle}>
-            Save Site
-          </button>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button type="submit" style={buttonStyle}>
+              {editingSiteId ? "Update Site" : "Save Site"}
+            </button>
+            {editingSiteId && (
+              <button
+                type="button"
+                onClick={resetSiteForm}
+                style={{ ...buttonStyle, background: "#6b7280" }}
+              >
+                Cancel
+              </button>
+            )}
+          </div>
         </form>
 
         <form onSubmit={saveSpec} style={{ ...cardStyle, marginBottom: 20 }}>
@@ -414,19 +544,101 @@ export default function AdminPage() {
           </div>
         </form>
 
+        <div style={{ ...cardStyle, marginBottom: 20 }}>
+          <h2>Developers</h2>
+          <div style={{ display: "grid", gap: 12 }}>
+            {developers.map((developer) => (
+              <div key={developer.id} style={listItemStyle}>
+                <div>
+                  <strong>{developer.name}</strong>
+                </div>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => editDeveloper(developer)}
+                    style={buttonStyle}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteDeveloper(developer.id)}
+                    style={{ ...buttonStyle, background: "#b91c1c" }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ ...cardStyle, marginBottom: 20 }}>
+          <h2>Categories</h2>
+          <div style={{ display: "grid", gap: 12 }}>
+            {categories.map((category) => (
+              <div key={category.id} style={listItemStyle}>
+                <div>
+                  <strong>{category.name}</strong>
+                </div>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => editCategory(category)}
+                    style={buttonStyle}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteCategory(category.id)}
+                    style={{ ...buttonStyle, background: "#b91c1c" }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ ...cardStyle, marginBottom: 20 }}>
+          <h2>Sites</h2>
+          <div style={{ display: "grid", gap: 12 }}>
+            {sites.map((site) => (
+              <div key={site.id} style={listItemStyle}>
+                <div>
+                  <strong>{site.name}</strong>
+                  <div style={{ color: "#6b7280", marginTop: 4 }}>
+                    Developer: {getDeveloperName(site.developer_id)}
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => editSite(site)}
+                    style={buttonStyle}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteSite(site.id)}
+                    style={{ ...buttonStyle, background: "#b91c1c" }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div style={cardStyle}>
           <h2>Existing Specs</h2>
           <div style={{ display: "grid", gap: 12 }}>
             {specs.map((spec) => (
-              <div
-                key={spec.id}
-                style={{
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 10,
-                  padding: 16,
-                  background: "#fff",
-                }}
-              >
+              <div key={spec.id} style={specItemStyle}>
                 <h3 style={{ marginTop: 0, marginBottom: 8 }}>{spec.title}</h3>
                 <p style={{ margin: "0 0 6px", color: "#6b7280" }}>
                   <strong>Site:</strong> {getSiteName(spec.site_id)}
@@ -496,4 +708,22 @@ const buttonStyle = {
   color: "#fff",
   cursor: "pointer",
   fontWeight: 700,
+};
+
+const listItemStyle = {
+  border: "1px solid #e5e7eb",
+  borderRadius: 10,
+  padding: 16,
+  background: "#fff",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: 20,
+};
+
+const specItemStyle = {
+  border: "1px solid #e5e7eb",
+  borderRadius: 10,
+  padding: 16,
+  background: "#fff",
 };
