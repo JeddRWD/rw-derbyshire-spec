@@ -9,11 +9,18 @@ export default function AdminPage() {
 
   const [developers, setDevelopers] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [sites, setSites] = useState([]);
+  const [specs, setSpecs] = useState([]);
 
   const [developerName, setDeveloperName] = useState("");
   const [categoryName, setCategoryName] = useState("");
   const [siteName, setSiteName] = useState("");
   const [siteDeveloperId, setSiteDeveloperId] = useState("");
+
+  const [specTitle, setSpecTitle] = useState("");
+  const [specBody, setSpecBody] = useState("");
+  const [specSiteId, setSpecSiteId] = useState("");
+  const [specCategoryId, setSpecCategoryId] = useState("");
 
   useEffect(() => {
     const loadSession = async () => {
@@ -49,8 +56,20 @@ export default function AdminPage() {
       .select("*")
       .order("name");
 
+    const { data: sts } = await supabase
+      .from("sites")
+      .select("*")
+      .order("name");
+
+    const { data: spc } = await supabase
+      .from("specs")
+      .select("*")
+      .order("title");
+
     setDevelopers(devs || []);
     setCategories(cats || []);
+    setSites(sts || []);
+    setSpecs(spc || []);
   };
 
   const signIn = async (e) => {
@@ -113,8 +132,39 @@ export default function AdminPage() {
 
     setSiteName("");
     setSiteDeveloperId("");
-    alert("Site added");
+    loadData();
   };
+
+  const addSpec = async (e) => {
+    e.preventDefault();
+
+    const { error } = await supabase.from("specs").insert([
+      {
+        title: specTitle,
+        body: specBody,
+        site_id: specSiteId,
+        category_id: specCategoryId,
+        updated_at: new Date().toISOString().slice(0, 10),
+      },
+    ]);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setSpecTitle("");
+    setSpecBody("");
+    setSpecSiteId("");
+    setSpecCategoryId("");
+    loadData();
+  };
+
+  const getSiteName = (id) =>
+    sites.find((site) => String(site.id) === String(id))?.name || "";
+
+  const getCategoryName = (id) =>
+    categories.find((category) => String(category.id) === String(id))?.name || "";
 
   if (!session) {
     return (
@@ -174,7 +224,7 @@ export default function AdminPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#f4f6f8", padding: 30 }}>
-      <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <div
           style={{
             display: "flex",
@@ -234,7 +284,7 @@ export default function AdminPage() {
           </form>
         </div>
 
-        <form onSubmit={addSite} style={cardStyle}>
+        <form onSubmit={addSite} style={{ ...cardStyle, marginBottom: 20 }}>
           <h2>Add Site</h2>
           <input
             value={siteName}
@@ -260,6 +310,89 @@ export default function AdminPage() {
             Save Site
           </button>
         </form>
+
+        <form onSubmit={addSpec} style={{ ...cardStyle, marginBottom: 20 }}>
+          <h2>Add Spec</h2>
+
+          <input
+            value={specTitle}
+            onChange={(e) => setSpecTitle(e.target.value)}
+            placeholder="Spec title"
+            style={inputStyle}
+          />
+
+          <select
+            value={specSiteId}
+            onChange={(e) => setSpecSiteId(e.target.value)}
+            style={inputStyle}
+          >
+            <option value="">Select Site</option>
+            {sites.map((site) => (
+              <option key={site.id} value={site.id}>
+                {site.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={specCategoryId}
+            onChange={(e) => setSpecCategoryId(e.target.value)}
+            style={inputStyle}
+          >
+            <option value="">Select Category</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+
+          <textarea
+            value={specBody}
+            onChange={(e) => setSpecBody(e.target.value)}
+            placeholder="Spec details"
+            rows={8}
+            style={{ ...inputStyle, resize: "vertical" }}
+          />
+
+          <button type="submit" style={buttonStyle}>
+            Save Spec
+          </button>
+        </form>
+
+        <div style={cardStyle}>
+          <h2>Existing Specs</h2>
+          <div style={{ display: "grid", gap: 12 }}>
+            {specs.map((spec) => (
+              <div
+                key={spec.id}
+                style={{
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 10,
+                  padding: 16,
+                  background: "#fff",
+                }}
+              >
+                <h3 style={{ marginTop: 0, marginBottom: 8 }}>{spec.title}</h3>
+                <p style={{ margin: "0 0 6px", color: "#6b7280" }}>
+                  <strong>Site:</strong> {getSiteName(spec.site_id)}
+                </p>
+                <p style={{ margin: "0 0 12px", color: "#6b7280" }}>
+                  <strong>Category:</strong> {getCategoryName(spec.category_id)}
+                </p>
+                <pre
+                  style={{
+                    whiteSpace: "pre-wrap",
+                    fontFamily: "Arial, sans-serif",
+                    margin: 0,
+                  }}
+                >
+                  {spec.body}
+                </pre>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
