@@ -21,6 +21,7 @@ export default function AdminPage() {
   const [specBody, setSpecBody] = useState("");
   const [specSiteId, setSpecSiteId] = useState("");
   const [specCategoryId, setSpecCategoryId] = useState("");
+  const [editingSpecId, setEditingSpecId] = useState(null);
 
   useEffect(() => {
     const loadSession = async () => {
@@ -135,29 +136,70 @@ export default function AdminPage() {
     loadData();
   };
 
-  const addSpec = async (e) => {
+  const saveSpec = async (e) => {
     e.preventDefault();
 
-    const { error } = await supabase.from("specs").insert([
-      {
-        title: specTitle,
-        body: specBody,
-        site_id: specSiteId,
-        category_id: specCategoryId,
-        updated_at: new Date().toISOString().slice(0, 10),
-      },
-    ]);
+    const payload = {
+      title: specTitle,
+      body: specBody,
+      site_id: specSiteId,
+      category_id: specCategoryId,
+      updated_at: new Date().toISOString().slice(0, 10),
+    };
+
+    let error;
+
+    if (editingSpecId) {
+      ({ error } = await supabase
+        .from("specs")
+        .update(payload)
+        .eq("id", editingSpecId));
+    } else {
+      ({ error } = await supabase.from("specs").insert([payload]));
+    }
 
     if (error) {
       alert(error.message);
       return;
     }
 
+    resetSpecForm();
+    loadData();
+  };
+
+  const editSpec = (spec) => {
+    setEditingSpecId(spec.id);
+    setSpecTitle(spec.title || "");
+    setSpecBody(spec.body || "");
+    setSpecSiteId(spec.site_id || "");
+    setSpecCategoryId(spec.category_id || "");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const deleteSpec = async (id) => {
+    const confirmed = window.confirm("Are you sure you want to delete this spec?");
+    if (!confirmed) return;
+
+    const { error } = await supabase.from("specs").delete().eq("id", id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    if (editingSpecId === id) {
+      resetSpecForm();
+    }
+
+    loadData();
+  };
+
+  const resetSpecForm = () => {
+    setEditingSpecId(null);
     setSpecTitle("");
     setSpecBody("");
     setSpecSiteId("");
     setSpecCategoryId("");
-    loadData();
   };
 
   const getSiteName = (id) =>
@@ -311,8 +353,8 @@ export default function AdminPage() {
           </button>
         </form>
 
-        <form onSubmit={addSpec} style={{ ...cardStyle, marginBottom: 20 }}>
-          <h2>Add Spec</h2>
+        <form onSubmit={saveSpec} style={{ ...cardStyle, marginBottom: 20 }}>
+          <h2>{editingSpecId ? "Edit Spec" : "Add Spec"}</h2>
 
           <input
             value={specTitle}
@@ -355,9 +397,21 @@ export default function AdminPage() {
             style={{ ...inputStyle, resize: "vertical" }}
           />
 
-          <button type="submit" style={buttonStyle}>
-            Save Spec
-          </button>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button type="submit" style={buttonStyle}>
+              {editingSpecId ? "Update Spec" : "Save Spec"}
+            </button>
+
+            {editingSpecId && (
+              <button
+                type="button"
+                onClick={resetSpecForm}
+                style={{ ...buttonStyle, background: "#6b7280" }}
+              >
+                Cancel Edit
+              </button>
+            )}
+          </div>
         </form>
 
         <div style={cardStyle}>
@@ -389,6 +443,24 @@ export default function AdminPage() {
                 >
                   {spec.body}
                 </pre>
+
+                <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+                  <button
+                    type="button"
+                    onClick={() => editSpec(spec)}
+                    style={buttonStyle}
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => deleteSpec(spec.id)}
+                    style={{ ...buttonStyle, background: "#b91c1c" }}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
