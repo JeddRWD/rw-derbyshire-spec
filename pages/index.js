@@ -86,9 +86,9 @@ export default function Home() {
           </div>
 
           <div>
-            <h1 style={{ margin: 0, fontSize: 28 }}>RW Derbyshire Spec Hub</h1>
+            <h1 style={{ margin: 0, fontSize: 28 }}>RWD Specification Hub</h1>
             <p style={{ margin: "6px 0 0", color: "#6b7280", fontSize: 14 }}>
-              Developer, site, and installation specification reference
+              Developer, site, and installation spec check
             </p>
           </div>
         </div>
