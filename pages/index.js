@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { supabase } from "../lib/supabaseClient";
 
 export default function Home() {
@@ -33,7 +34,9 @@ export default function Home() {
   };
 
   const filteredSites = selectedDeveloper
-    ? sites.filter((site) => String(site.developer_id) === String(selectedDeveloper))
+    ? sites.filter(
+        (site) => String(site.developer_id) === String(selectedDeveloper)
+      )
     : [];
 
   const filteredSpecs =
@@ -51,7 +54,6 @@ export default function Home() {
           margin: 0;
           font-family: Arial, sans-serif;
           background: #f4f6f8;
-          color: #1f2937;
         }
 
         @media print {
@@ -60,32 +62,24 @@ export default function Home() {
           }
 
           body {
-            background: #ffffff !important;
+            background: white !important;
           }
 
           .print-card {
             box-shadow: none !important;
-            border: 1px solid #d1d5db !important;
+            border: 1px solid #ccc !important;
             break-inside: avoid;
-            page-break-inside: avoid;
-          }
-
-          .print-wrapper {
-            max-width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
           }
         }
       `}</style>
 
-      <div style={{ minHeight: "100vh", background: "#f4f6f8" }}>
+      <div style={{ minHeight: "100vh" }}>
+        {/* HEADER */}
         <header
-          className="no-print"
           style={{
             background: "#ffffff",
             borderBottom: "1px solid #e5e7eb",
             padding: "20px 30px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
           }}
         >
           <div
@@ -94,113 +88,101 @@ export default function Home() {
               margin: "0 auto",
               display: "flex",
               alignItems: "center",
-              gap: 20,
+              justifyContent: "space-between",
             }}
           >
-            <Image
-              src="/logo.jpg"
-              alt="RW Derbyshire Electrical"
-              width={180}
-              height={60}
-              style={{ height: "auto", width: "180px" }}
-            />
-            <div>
-              <h1 style={{ margin: 0, fontSize: 28 }}>RWD Spec Hub</h1>
-              <p style={{ margin: "6px 0 0", color: "#6b7280", fontSize: 14 }}>
-                Developer, site, and installation spec check
-              </p>
+            {/* LEFT SIDE */}
+            <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+              <Image
+                src="/logo.jpg"
+                alt="RW Derbyshire Electrical"
+                width={180}
+                height={60}
+              />
+
+              <div>
+                <h1 style={{ margin: 0 }}>RWD Spec Hub</h1>
+                <p style={{ margin: 0, color: "#6b7280", fontSize: 14 }}>
+                  Electrical installation specifications
+                </p>
+              </div>
             </div>
+
+            {/* RIGHT SIDE */}
+            <Link href="/admin">
+              <button
+                className="no-print"
+                style={{
+                  padding: "10px 16px",
+                  background: "#1f3b63",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                Admin Login
+              </button>
+            </Link>
           </div>
         </header>
 
-        <main
-          className="print-wrapper"
-          style={{ maxWidth: 1100, margin: "30px auto", padding: "0 20px" }}
-        >
+        {/* MAIN */}
+        <main style={{ maxWidth: 1100, margin: "30px auto", padding: "0 20px" }}>
+          {/* SELECT BOX */}
           <div
             className="no-print"
             style={{
-              background: "#ffffff",
-              border: "1px solid #e5e7eb",
+              background: "#fff",
+              padding: 20,
               borderRadius: 12,
-              padding: 24,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-              marginBottom: 24,
+              border: "1px solid #e5e7eb",
+              marginBottom: 20,
             }}
           >
-            <h2 style={{ marginTop: 0, marginBottom: 20, fontSize: 20 }}>
-              Select Developer and Site
-            </h2>
+            <h2>Select Developer and Site</h2>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              <div>
-                <label style={{ display: "block", marginBottom: 8, fontSize: 14, fontWeight: 600 }}>
-                  Developer
-                </label>
-                <select
-                  value={selectedDeveloper}
-                  onChange={(e) => handleDeveloperChange(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "12px 14px",
-                    borderRadius: 8,
-                    border: "1px solid #d1d5db",
-                    background: "#fff",
-                    fontSize: 15,
-                  }}
-                >
-                  <option value="">Select Developer</option>
-                  {developers.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <select
+                value={selectedDeveloper}
+                onChange={(e) => handleDeveloperChange(e.target.value)}
+                style={{ padding: 10, borderRadius: 6 }}
+              >
+                <option value="">Select Developer</option>
+                {developers.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
 
-              <div>
-                <label style={{ display: "block", marginBottom: 8, fontSize: 14, fontWeight: 600 }}>
-                  Site
-                </label>
-                <select
-                  value={selectedSite}
-                  onChange={(e) => setSelectedSite(e.target.value)}
-                  disabled={!selectedDeveloper}
-                  style={{
-                    width: "100%",
-                    padding: "12px 14px",
-                    borderRadius: 8,
-                    border: "1px solid #d1d5db",
-                    background: "#fff",
-                    fontSize: 15,
-                  }}
-                >
-                  <option value="">Select Site</option>
-                  {filteredSites.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <select
+                value={selectedSite}
+                onChange={(e) => setSelectedSite(e.target.value)}
+                disabled={!selectedDeveloper}
+                style={{ padding: 10, borderRadius: 6 }}
+              >
+                <option value="">Select Site</option>
+                {filteredSites.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
             </div>
-
-            {!selectedDeveloper && <p style={{ marginTop: 18, color: "#6b7280" }}>Please select a developer.</p>}
-            {selectedDeveloper && !selectedSite && <p style={{ marginTop: 18, color: "#6b7280" }}>Please select a site.</p>}
 
             {selectedDeveloper && selectedSite && (
               <button
                 onClick={() => window.print()}
                 style={{
-                  marginTop: 18,
-                  padding: "12px 18px",
+                  marginTop: 15,
+                  padding: "10px 16px",
                   background: "#1f3b63",
-                  color: "#ffffff",
+                  color: "#fff",
                   border: "none",
                   borderRadius: 8,
                   cursor: "pointer",
-                  fontSize: 15,
-                  fontWeight: 600,
                 }}
               >
                 Print Now
@@ -208,61 +190,42 @@ export default function Home() {
             )}
           </div>
 
+          {/* TITLE */}
           {selectedDeveloper && selectedSite && (
-            <div style={{ marginBottom: 20, padding: "0 4px" }}>
-              <h2 style={{ marginBottom: 6, fontSize: 24 }}>Site Specification</h2>
-              <p style={{ margin: 0, color: "#6b7280", fontSize: 15 }}>
-                {developers.find((d) => String(d.id) === String(selectedDeveloper))?.name || ""} -{" "}
-                {sites.find((s) => String(s.id) === String(selectedSite))?.name || ""}
-              </p>
+            <div style={{ marginBottom: 20 }}>
+              <h2>
+                {
+                  developers.find((d) => d.id == selectedDeveloper)?.name
+                }{" "}
+                - {sites.find((s) => s.id == selectedSite)?.name}
+              </h2>
             </div>
           )}
 
-          {selectedDeveloper && selectedSite && filteredSpecs.map((spec) => (
+          {/* SPECS */}
+          {filteredSpecs.map((spec) => (
             <div
               key={spec.id}
               className="print-card"
               style={{
-                background: "#ffffff",
-                border: "1px solid #e5e7eb",
+                background: "#fff",
+                padding: 20,
                 borderRadius: 12,
-                padding: 24,
-                marginBottom: 20,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                border: "1px solid #e5e7eb",
+                marginBottom: 15,
               }}
             >
-              <h3 style={{ marginTop: 0, marginBottom: 6, fontSize: 22 }}>{spec.title}</h3>
-              <p style={{ color: "#6b7280", marginTop: 0, marginBottom: 16, fontSize: 14, fontWeight: 600 }}>
+              <h3>{spec.title}</h3>
+              <p style={{ color: "#6b7280" }}>
                 {getCategory(spec.category_id)}
               </p>
-              <pre
-                style={{
-                  whiteSpace: "pre-wrap",
-                  fontFamily: "Arial, sans-serif",
-                  margin: 0,
-                  lineHeight: 1.6,
-                  fontSize: 15,
-                }}
-              >
-                {spec.body}
-              </pre>
+              <p style={{ whiteSpace: "pre-wrap" }}>{spec.body}</p>
             </div>
           ))}
 
-          {selectedDeveloper && selectedSite && filteredSpecs.length === 0 && (
-            <div
-              className="print-card"
-              style={{
-                background: "#ffffff",
-                border: "1px solid #e5e7eb",
-                borderRadius: 12,
-                padding: 24,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-              }}
-            >
-              <p style={{ margin: 0, color: "#6b7280" }}>No specs found for this site.</p>
-            </div>
-          )}
+          {selectedDeveloper &&
+            selectedSite &&
+            filteredSpecs.length === 0 && <p>No specs found.</p>}
         </main>
       </div>
     </>
