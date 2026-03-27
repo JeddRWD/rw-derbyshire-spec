@@ -40,6 +40,11 @@ export default function AdminPage() {
   const [specFilterSiteId, setSpecFilterSiteId] = useState("");
   const [specFilterCategoryId, setSpecFilterCategoryId] = useState("");
 
+  const [showDevelopers, setShowDevelopers] = useState(false);
+  const [showCategories, setShowCategories] = useState(false);
+  const [showSites, setShowSites] = useState(false);
+  const [showSpecs, setShowSpecs] = useState(true);
+
   useEffect(() => {
     const loadSession = async () => {
       const { data, error } = await supabase.auth.getSession();
@@ -746,295 +751,337 @@ export default function AdminPage() {
         </form>
 
         <div style={{ ...cardStyle, marginBottom: 20 }}>
-          <h2>Developers</h2>
-          <div style={{ display: "grid", gap: 12 }}>
-            {developers.map((developer) => (
-              <div key={developer.id} style={listItemStyle}>
-                <div>
-                  <strong>{developer.name}</strong>
-                  <div style={{ color: "#6b7280", marginTop: 4, fontSize: 14 }}>
-                    Added by: {developer.created_by_email || "Unknown"}
+          <button
+            type="button"
+            onClick={() => setShowDevelopers(!showDevelopers)}
+            style={sectionToggleStyle}
+          >
+            <span>Developers</span>
+            <span>{showDevelopers ? "▲" : "▼"}</span>
+          </button>
+
+          {showDevelopers && (
+            <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
+              {developers.map((developer) => (
+                <div key={developer.id} style={listItemStyle}>
+                  <div>
+                    <strong>{developer.name}</strong>
+                    <div style={{ color: "#6b7280", marginTop: 4, fontSize: 14 }}>
+                      Added by: {developer.created_by_email || "Unknown"}
+                    </div>
+                    <div style={{ color: "#6b7280", marginTop: 2, fontSize: 14 }}>
+                      Updated by: {developer.updated_by_email || "Unknown"}
+                    </div>
                   </div>
-                  <div style={{ color: "#6b7280", marginTop: 2, fontSize: 14 }}>
-                    Updated by: {developer.updated_by_email || "Unknown"}
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => editDeveloper(developer)}
+                      style={buttonStyle}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteDeveloper(developer.id)}
+                      style={{ ...buttonStyle, background: "#b91c1c" }}
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 10 }}>
-                  <button
-                    type="button"
-                    onClick={() => editDeveloper(developer)}
-                    style={buttonStyle}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => deleteDeveloper(developer.id)}
-                    style={{ ...buttonStyle, background: "#b91c1c" }}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div style={{ ...cardStyle, marginBottom: 20 }}>
-          <h2>Categories</h2>
-          <div style={{ display: "grid", gap: 12 }}>
-            {categories.map((category) => (
-              <div key={category.id} style={listItemStyle}>
-                <div>
-                  <strong>{category.name}</strong>
-                  <div style={{ color: "#6b7280", marginTop: 4, fontSize: 14 }}>
-                    Added by: {category.created_by_email || "Unknown"}
+          <button
+            type="button"
+            onClick={() => setShowCategories(!showCategories)}
+            style={sectionToggleStyle}
+          >
+            <span>Categories</span>
+            <span>{showCategories ? "▲" : "▼"}</span>
+          </button>
+
+          {showCategories && (
+            <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
+              {categories.map((category) => (
+                <div key={category.id} style={listItemStyle}>
+                  <div>
+                    <strong>{category.name}</strong>
+                    <div style={{ color: "#6b7280", marginTop: 4, fontSize: 14 }}>
+                      Added by: {category.created_by_email || "Unknown"}
+                    </div>
+                    <div style={{ color: "#6b7280", marginTop: 2, fontSize: 14 }}>
+                      Updated by: {category.updated_by_email || "Unknown"}
+                    </div>
                   </div>
-                  <div style={{ color: "#6b7280", marginTop: 2, fontSize: 14 }}>
-                    Updated by: {category.updated_by_email || "Unknown"}
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => editCategory(category)}
+                      style={buttonStyle}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteCategory(category.id)}
+                      style={{ ...buttonStyle, background: "#b91c1c" }}
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 10 }}>
-                  <button
-                    type="button"
-                    onClick={() => editCategory(category)}
-                    style={buttonStyle}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => deleteCategory(category.id)}
-                    style={{ ...buttonStyle, background: "#b91c1c" }}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div style={{ ...cardStyle, marginBottom: 20 }}>
-          <h2>Sites</h2>
-          <div style={{ display: "grid", gap: 12 }}>
-            {sites.map((site) => (
-              <div key={site.id} style={listItemStyle}>
-                <div>
-                  <strong>{site.name}</strong>
-                  <div style={{ color: "#6b7280", marginTop: 4 }}>
-                    Developer: {getDeveloperName(site.developer_id)}
+          <button
+            type="button"
+            onClick={() => setShowSites(!showSites)}
+            style={sectionToggleStyle}
+          >
+            <span>Sites</span>
+            <span>{showSites ? "▲" : "▼"}</span>
+          </button>
+
+          {showSites && (
+            <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
+              {sites.map((site) => (
+                <div key={site.id} style={listItemStyle}>
+                  <div>
+                    <strong>{site.name}</strong>
+                    <div style={{ color: "#6b7280", marginTop: 4 }}>
+                      Developer: {getDeveloperName(site.developer_id)}
+                    </div>
+                    <div style={{ color: "#6b7280", marginTop: 4, fontSize: 14 }}>
+                      Added by: {site.created_by_email || "Unknown"}
+                    </div>
+                    <div style={{ color: "#6b7280", marginTop: 2, fontSize: 14 }}>
+                      Updated by: {site.updated_by_email || "Unknown"}
+                    </div>
                   </div>
-                  <div style={{ color: "#6b7280", marginTop: 4, fontSize: 14 }}>
-                    Added by: {site.created_by_email || "Unknown"}
-                  </div>
-                  <div style={{ color: "#6b7280", marginTop: 2, fontSize: 14 }}>
-                    Updated by: {site.updated_by_email || "Unknown"}
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => editSite(site)}
+                      style={buttonStyle}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteSite(site.id)}
+                      style={{ ...buttonStyle, background: "#b91c1c" }}
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 10 }}>
-                  <button
-                    type="button"
-                    onClick={() => editSite(site)}
-                    style={buttonStyle}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => deleteSite(site.id)}
-                    style={{ ...buttonStyle, background: "#b91c1c" }}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div style={cardStyle}>
-          <h2>Existing Specs</h2>
-
-          <div
-            style={{
-              marginBottom: 16,
-              display: "flex",
-              gap: 10,
-              flexWrap: "wrap",
-            }}
+          <button
+            type="button"
+            onClick={() => setShowSpecs(!showSpecs)}
+            style={sectionToggleStyle}
           >
-            <select
-              value={specFilterSiteId}
-              onChange={(e) => setSpecFilterSiteId(e.target.value)}
-              style={{ ...inputStyle, marginBottom: 0, maxWidth: 320 }}
-            >
-              <option value="">All Sites</option>
-              {sites.map((site) => (
-                <option key={site.id} value={site.id}>
-                  {site.name}
-                </option>
-              ))}
-            </select>
+            <span>Existing Specs</span>
+            <span>{showSpecs ? "▲" : "▼"}</span>
+          </button>
 
-            <select
-              value={specFilterCategoryId}
-              onChange={(e) => setSpecFilterCategoryId(e.target.value)}
-              style={{ ...inputStyle, marginBottom: 0, maxWidth: 320 }}
-            >
-              <option value="">All Categories</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-
-            {(specFilterSiteId || specFilterCategoryId) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSpecFilterSiteId("");
-                  setSpecFilterCategoryId("");
+          {showSpecs && (
+            <>
+              <div
+                style={{
+                  marginTop: 16,
+                  marginBottom: 16,
+                  display: "flex",
+                  gap: 10,
+                  flexWrap: "wrap",
                 }}
-                style={{ ...buttonStyle, background: "#6b7280" }}
               >
-                Clear Filters
-              </button>
-            )}
-          </div>
-
-          <div style={{ display: "grid", gap: 12 }}>
-            {filteredSpecsList.map((spec) => (
-              <div key={spec.id} style={specItemStyle}>
-                <h3 style={{ marginTop: 0, marginBottom: 8 }}>{spec.title}</h3>
-                <p style={{ margin: "0 0 6px", color: "#6b7280" }}>
-                  <strong>Site:</strong> {getSiteName(spec.site_id)}
-                </p>
-                <p style={{ margin: "0 0 6px", color: "#6b7280" }}>
-                  <strong>Category:</strong> {getCategoryName(spec.category_id)}
-                </p>
-                <p style={{ margin: "0 0 6px", color: "#6b7280" }}>
-                  <strong>Added by:</strong> {spec.created_by_email || "Unknown"}
-                </p>
-                <p style={{ margin: "0 0 12px", color: "#6b7280" }}>
-                  <strong>Updated by:</strong> {spec.updated_by_email || "Unknown"}
-                </p>
-
-                <pre
-                  style={{
-                    whiteSpace: "pre-wrap",
-                    fontFamily: "Arial, sans-serif",
-                    margin: 0,
-                  }}
+                <select
+                  value={specFilterSiteId}
+                  onChange={(e) => setSpecFilterSiteId(e.target.value)}
+                  style={{ ...inputStyle, marginBottom: 0, maxWidth: 320 }}
                 >
-                  {spec.body}
-                </pre>
+                  <option value="">All Sites</option>
+                  {sites.map((site) => (
+                    <option key={site.id} value={site.id}>
+                      {site.name}
+                    </option>
+                  ))}
+                </select>
 
-                {getImagesForSpec(spec.id).length > 0 && (
-                  <div style={{ marginTop: 16 }}>
-                    <strong>Images</strong>
-                    <div
+                <select
+                  value={specFilterCategoryId}
+                  onChange={(e) => setSpecFilterCategoryId(e.target.value)}
+                  style={{ ...inputStyle, marginBottom: 0, maxWidth: 320 }}
+                >
+                  <option value="">All Categories</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+
+                {(specFilterSiteId || specFilterCategoryId) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSpecFilterSiteId("");
+                      setSpecFilterCategoryId("");
+                    }}
+                    style={{ ...buttonStyle, background: "#6b7280" }}
+                  >
+                    Clear Filters
+                  </button>
+                )}
+              </div>
+
+              <div style={{ display: "grid", gap: 12 }}>
+                {filteredSpecsList.map((spec) => (
+                  <div key={spec.id} style={specItemStyle}>
+                    <h3 style={{ marginTop: 0, marginBottom: 8 }}>{spec.title}</h3>
+                    <p style={{ margin: "0 0 6px", color: "#6b7280" }}>
+                      <strong>Site:</strong> {getSiteName(spec.site_id)}
+                    </p>
+                    <p style={{ margin: "0 0 6px", color: "#6b7280" }}>
+                      <strong>Category:</strong> {getCategoryName(spec.category_id)}
+                    </p>
+                    <p style={{ margin: "0 0 6px", color: "#6b7280" }}>
+                      <strong>Added by:</strong> {spec.created_by_email || "Unknown"}
+                    </p>
+                    <p style={{ margin: "0 0 12px", color: "#6b7280" }}>
+                      <strong>Updated by:</strong> {spec.updated_by_email || "Unknown"}
+                    </p>
+
+                    <pre
                       style={{
-                        display: "grid",
-                        gridTemplateColumns:
-                          "repeat(auto-fit, minmax(180px, 1fr))",
-                        gap: 12,
-                        marginTop: 10,
+                        whiteSpace: "pre-wrap",
+                        fontFamily: "Arial, sans-serif",
+                        margin: 0,
                       }}
                     >
-                      {getImagesForSpec(spec.id).map((image) => (
+                      {spec.body}
+                    </pre>
+
+                    {getImagesForSpec(spec.id).length > 0 && (
+                      <div style={{ marginTop: 16 }}>
+                        <strong>Images</strong>
                         <div
-                          key={image.id}
                           style={{
-                            border: "1px solid #e5e7eb",
-                            borderRadius: 10,
-                            padding: 10,
+                            display: "grid",
+                            gridTemplateColumns:
+                              "repeat(auto-fit, minmax(180px, 1fr))",
+                            gap: 12,
+                            marginTop: 10,
                           }}
                         >
-                          <img
-                            src={image.image_url}
-                            alt={image.caption || spec.title}
-                            style={{
-                              width: "100%",
-                              maxHeight: 180,
-                              objectFit: "contain",
-                              borderRadius: 8,
-                              display: "block",
-                              background: "#f9fafb",
-                              padding: 6,
-                              border: "1px solid #e5e7eb",
-                              boxSizing: "border-box",
-                            }}
-                          />
-                          {image.caption && (
-                            <p
+                          {getImagesForSpec(spec.id).map((image) => (
+                            <div
+                              key={image.id}
                               style={{
-                                margin: "8px 0 0",
-                                fontSize: 13,
-                                color: "#6b7280",
+                                border: "1px solid #e5e7eb",
+                                borderRadius: 10,
+                                padding: 10,
                               }}
                             >
-                              {image.caption}
-                            </p>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => deleteSpecImage(image)}
-                            style={{
-                              ...buttonStyle,
-                              background: "#b91c1c",
-                              marginTop: 10,
-                              width: "100%",
-                            }}
-                          >
-                            Delete Image
-                          </button>
+                              <img
+                                src={image.image_url}
+                                alt={image.caption || spec.title}
+                                style={{
+                                  width: "100%",
+                                  maxHeight: 180,
+                                  objectFit: "contain",
+                                  borderRadius: 8,
+                                  display: "block",
+                                  background: "#f9fafb",
+                                  padding: 6,
+                                  border: "1px solid #e5e7eb",
+                                  boxSizing: "border-box",
+                                }}
+                              />
+                              {image.caption && (
+                                <p
+                                  style={{
+                                    margin: "8px 0 0",
+                                    fontSize: 13,
+                                    color: "#6b7280",
+                                  }}
+                                >
+                                  {image.caption}
+                                </p>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => deleteSpecImage(image)}
+                                style={{
+                                  ...buttonStyle,
+                                  background: "#b91c1c",
+                                  marginTop: 10,
+                                  width: "100%",
+                                }}
+                              >
+                                Delete Image
+                              </button>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      </div>
+                    )}
+
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 10,
+                        marginTop: 14,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => editSpec(spec)}
+                        style={buttonStyle}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => startCopySpec(spec)}
+                        style={{ ...buttonStyle, background: "#0f766e" }}
+                      >
+                        Copy
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteSpec(spec.id)}
+                        style={{ ...buttonStyle, background: "#b91c1c" }}
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
+                ))}
+
+                {filteredSpecsList.length === 0 && (
+                  <p style={{ color: "#6b7280", marginTop: 10 }}>
+                    No specs found for the selected filters.
+                  </p>
                 )}
-
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 10,
-                    marginTop: 14,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => editSpec(spec)}
-                    style={buttonStyle}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => startCopySpec(spec)}
-                    style={{ ...buttonStyle, background: "#0f766e" }}
-                  >
-                    Copy
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => deleteSpec(spec.id)}
-                    style={{ ...buttonStyle, background: "#b91c1c" }}
-                  >
-                    Delete
-                  </button>
-                </div>
               </div>
-            ))}
-
-            {filteredSpecsList.length === 0 && (
-              <p style={{ color: "#6b7280", marginTop: 10 }}>
-                No specs found for the selected filters.
-              </p>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -1085,4 +1132,18 @@ const specItemStyle = {
   borderRadius: 10,
   padding: 16,
   background: "#fff",
+};
+
+const sectionToggleStyle = {
+  width: "100%",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  background: "transparent",
+  border: "none",
+  padding: 0,
+  fontSize: 22,
+  fontWeight: 700,
+  cursor: "pointer",
+  color: "#1f2937",
 };
