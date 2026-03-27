@@ -251,22 +251,24 @@ export default function Home() {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
                       gap: 12,
                     }}
                   >
                     {getImagesForSpec(spec.id).map((image) => (
                       <div key={image.id}>
                         <img
-                          src={image.image_url}
-                          alt={image.caption || spec.title}
-                          style={{
-                            width: "100%",
-                            borderRadius: 10,
-                            border: "1px solid #e5e7eb",
-                            display: "block",
-                          }}
-                        />
+  src={image.image_url}
+  alt={image.caption || spec.title}
+  style={{
+    width: "100%",
+    height: 180,
+    objectFit: "cover",
+    borderRadius: 10,
+    border: "1px solid #e5e7eb",
+    display: "block",
+  }}
+/>
                         {image.caption && (
                           <p
                             style={{
