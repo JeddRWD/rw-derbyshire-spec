@@ -37,6 +37,9 @@ export default function AdminPage() {
   const [copyingSpec, setCopyingSpec] = useState(null);
   const [copySiteId, setCopySiteId] = useState("");
 
+  const [specFilterSiteId, setSpecFilterSiteId] = useState("");
+  const [specFilterCategoryId, setSpecFilterCategoryId] = useState("");
+
   useEffect(() => {
     const loadSession = async () => {
       const { data, error } = await supabase.auth.getSession();
@@ -59,10 +62,26 @@ export default function AdminPage() {
   }, [session]);
 
   const loadData = async () => {
-    const { data: devs } = await supabase.from("developers").select("*").order("name");
-    const { data: cats } = await supabase.from("categories").select("*").order("name");
-    const { data: sts } = await supabase.from("sites").select("*").order("name");
-    const { data: spc } = await supabase.from("specs").select("*").order("title");
+    const { data: devs } = await supabase
+      .from("developers")
+      .select("*")
+      .order("name");
+
+    const { data: cats } = await supabase
+      .from("categories")
+      .select("*")
+      .order("name");
+
+    const { data: sts } = await supabase
+      .from("sites")
+      .select("*")
+      .order("name");
+
+    const { data: spc } = await supabase
+      .from("specs")
+      .select("*")
+      .order("title");
+
     const { data: imgs } = await supabase
       .from("spec_images")
       .select("*")
@@ -400,7 +419,11 @@ export default function AdminPage() {
         await supabase.storage.from("spec-images").remove([storagePath]);
       }
 
-      const { error } = await supabase.from("spec_images").delete().eq("id", image.id);
+      const { error } = await supabase
+        .from("spec_images")
+        .delete()
+        .eq("id", image.id);
+
       if (error) throw error;
 
       await loadData();
@@ -421,12 +444,37 @@ export default function AdminPage() {
   const getImagesForSpec = (specId) =>
     specImages.filter((image) => String(image.spec_id) === String(specId));
 
+  const filteredSpecsList = specs.filter((spec) => {
+    const siteMatches = specFilterSiteId
+      ? String(spec.site_id) === String(specFilterSiteId)
+      : true;
+
+    const categoryMatches = specFilterCategoryId
+      ? String(spec.category_id) === String(specFilterCategoryId)
+      : true;
+
+    return siteMatches && categoryMatches;
+  });
+
   if (!session) {
     return (
-      <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#f4f6f8" }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "grid",
+          placeItems: "center",
+          background: "#f4f6f8",
+        }}
+      >
         <form
           onSubmit={signIn}
-          style={{ width: 360, background: "#fff", padding: 30, borderRadius: 12, border: "1px solid #e5e7eb" }}
+          style={{
+            width: 360,
+            background: "#fff",
+            padding: 30,
+            borderRadius: 12,
+            border: "1px solid #e5e7eb",
+          }}
         >
           <h1 style={{ marginTop: 0 }}>Admin Login</h1>
           <input
@@ -445,7 +493,14 @@ export default function AdminPage() {
           />
           <button
             type="submit"
-            style={{ width: "100%", padding: 12, border: "none", background: "#1f3b63", color: "#fff", cursor: "pointer" }}
+            style={{
+              width: "100%",
+              padding: 12,
+              border: "none",
+              background: "#1f3b63",
+              color: "#fff",
+              cursor: "pointer",
+            }}
           >
             Sign In
           </button>
@@ -457,21 +512,46 @@ export default function AdminPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#f4f6f8", padding: 30 }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 24,
+          }}
+        >
           <h1 style={{ margin: 0 }}>Admin Panel</h1>
-          <button onClick={signOut} style={buttonStyle}>Sign Out</button>
+          <button onClick={signOut} style={buttonStyle}>
+            Sign Out
+          </button>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 20,
+            marginBottom: 20,
+          }}
+        >
           <form onSubmit={saveDeveloper} style={cardStyle}>
             <h2>{editingDeveloperId ? "Edit Developer" : "Add Developer"}</h2>
-            <input value={developerName} onChange={(e) => setDeveloperName(e.target.value)} placeholder="Developer name" style={inputStyle} />
+            <input
+              value={developerName}
+              onChange={(e) => setDeveloperName(e.target.value)}
+              placeholder="Developer name"
+              style={inputStyle}
+            />
             <div style={{ display: "flex", gap: 10 }}>
               <button type="submit" style={buttonStyle}>
                 {editingDeveloperId ? "Update Developer" : "Save Developer"}
               </button>
               {editingDeveloperId && (
-                <button type="button" onClick={resetDeveloperForm} style={{ ...buttonStyle, background: "#6b7280" }}>
+                <button
+                  type="button"
+                  onClick={resetDeveloperForm}
+                  style={{ ...buttonStyle, background: "#6b7280" }}
+                >
                   Cancel
                 </button>
               )}
@@ -480,13 +560,22 @@ export default function AdminPage() {
 
           <form onSubmit={saveCategory} style={cardStyle}>
             <h2>{editingCategoryId ? "Edit Category" : "Add Category"}</h2>
-            <input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="Category name" style={inputStyle} />
+            <input
+              value={categoryName}
+              onChange={(e) => setCategoryName(e.target.value)}
+              placeholder="Category name"
+              style={inputStyle}
+            />
             <div style={{ display: "flex", gap: 10 }}>
               <button type="submit" style={buttonStyle}>
                 {editingCategoryId ? "Update Category" : "Save Category"}
               </button>
               {editingCategoryId && (
-                <button type="button" onClick={resetCategoryForm} style={{ ...buttonStyle, background: "#6b7280" }}>
+                <button
+                  type="button"
+                  onClick={resetCategoryForm}
+                  style={{ ...buttonStyle, background: "#6b7280" }}
+                >
                   Cancel
                 </button>
               )}
@@ -496,11 +585,22 @@ export default function AdminPage() {
 
         <form onSubmit={saveSite} style={{ ...cardStyle, marginBottom: 20 }}>
           <h2>{editingSiteId ? "Edit Site" : "Add Site"}</h2>
-          <input value={siteName} onChange={(e) => setSiteName(e.target.value)} placeholder="Site name" style={inputStyle} />
-          <select value={siteDeveloperId} onChange={(e) => setSiteDeveloperId(e.target.value)} style={inputStyle}>
+          <input
+            value={siteName}
+            onChange={(e) => setSiteName(e.target.value)}
+            placeholder="Site name"
+            style={inputStyle}
+          />
+          <select
+            value={siteDeveloperId}
+            onChange={(e) => setSiteDeveloperId(e.target.value)}
+            style={inputStyle}
+          >
             <option value="">Select Developer</option>
             {developers.map((developer) => (
-              <option key={developer.id} value={developer.id}>{developer.name}</option>
+              <option key={developer.id} value={developer.id}>
+                {developer.name}
+              </option>
             ))}
           </select>
           <div style={{ display: "flex", gap: 10 }}>
@@ -508,7 +608,11 @@ export default function AdminPage() {
               {editingSiteId ? "Update Site" : "Save Site"}
             </button>
             {editingSiteId && (
-              <button type="button" onClick={resetSiteForm} style={{ ...buttonStyle, background: "#6b7280" }}>
+              <button
+                type="button"
+                onClick={resetSiteForm}
+                style={{ ...buttonStyle, background: "#6b7280" }}
+              >
                 Cancel
               </button>
             )}
@@ -517,17 +621,34 @@ export default function AdminPage() {
 
         <form onSubmit={saveSpec} style={{ ...cardStyle, marginBottom: 20 }}>
           <h2>{editingSpecId ? "Edit Spec" : "Add Spec"}</h2>
-          <input value={specTitle} onChange={(e) => setSpecTitle(e.target.value)} placeholder="Spec title" style={inputStyle} />
-          <select value={specSiteId} onChange={(e) => setSpecSiteId(e.target.value)} style={inputStyle}>
+          <input
+            value={specTitle}
+            onChange={(e) => setSpecTitle(e.target.value)}
+            placeholder="Spec title"
+            style={inputStyle}
+          />
+          <select
+            value={specSiteId}
+            onChange={(e) => setSpecSiteId(e.target.value)}
+            style={inputStyle}
+          >
             <option value="">Select Site</option>
             {sites.map((site) => (
-              <option key={site.id} value={site.id}>{site.name}</option>
+              <option key={site.id} value={site.id}>
+                {site.name}
+              </option>
             ))}
           </select>
-          <select value={specCategoryId} onChange={(e) => setSpecCategoryId(e.target.value)} style={inputStyle}>
+          <select
+            value={specCategoryId}
+            onChange={(e) => setSpecCategoryId(e.target.value)}
+            style={inputStyle}
+          >
             <option value="">Select Category</option>
             {categories.map((category) => (
-              <option key={category.id} value={category.id}>{category.name}</option>
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
             ))}
           </select>
           <textarea
@@ -542,7 +663,11 @@ export default function AdminPage() {
               {editingSpecId ? "Update Spec" : "Save Spec"}
             </button>
             {editingSpecId && (
-              <button type="button" onClick={resetSpecForm} style={{ ...buttonStyle, background: "#6b7280" }}>
+              <button
+                type="button"
+                onClick={resetSpecForm}
+                style={{ ...buttonStyle, background: "#6b7280" }}
+              >
                 Cancel Edit
               </button>
             )}
@@ -568,7 +693,10 @@ export default function AdminPage() {
               ))}
             </select>
             <div style={{ display: "flex", gap: 10 }}>
-              <button type="submit" style={{ ...buttonStyle, background: "#0f766e" }}>
+              <button
+                type="submit"
+                style={{ ...buttonStyle, background: "#0f766e" }}
+              >
                 Copy Spec
               </button>
               <button
@@ -587,7 +715,11 @@ export default function AdminPage() {
 
         <form onSubmit={uploadSpecImage} style={{ ...cardStyle, marginBottom: 20 }}>
           <h2>Upload Image to Spec</h2>
-          <select value={imageSpecId} onChange={(e) => setImageSpecId(e.target.value)} style={inputStyle}>
+          <select
+            value={imageSpecId}
+            onChange={(e) => setImageSpecId(e.target.value)}
+            style={inputStyle}
+          >
             <option value="">Select Spec</option>
             {specs.map((spec) => (
               <option key={spec.id} value={spec.id}>
@@ -628,8 +760,20 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>
-                  <button type="button" onClick={() => editDeveloper(developer)} style={buttonStyle}>Edit</button>
-                  <button type="button" onClick={() => deleteDeveloper(developer.id)} style={{ ...buttonStyle, background: "#b91c1c" }}>Delete</button>
+                  <button
+                    type="button"
+                    onClick={() => editDeveloper(developer)}
+                    style={buttonStyle}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteDeveloper(developer.id)}
+                    style={{ ...buttonStyle, background: "#b91c1c" }}
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             ))}
@@ -651,8 +795,20 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>
-                  <button type="button" onClick={() => editCategory(category)} style={buttonStyle}>Edit</button>
-                  <button type="button" onClick={() => deleteCategory(category.id)} style={{ ...buttonStyle, background: "#b91c1c" }}>Delete</button>
+                  <button
+                    type="button"
+                    onClick={() => editCategory(category)}
+                    style={buttonStyle}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteCategory(category.id)}
+                    style={{ ...buttonStyle, background: "#b91c1c" }}
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             ))}
@@ -677,8 +833,20 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>
-                  <button type="button" onClick={() => editSite(site)} style={buttonStyle}>Edit</button>
-                  <button type="button" onClick={() => deleteSite(site.id)} style={{ ...buttonStyle, background: "#b91c1c" }}>Delete</button>
+                  <button
+                    type="button"
+                    onClick={() => editSite(site)}
+                    style={buttonStyle}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteSite(site.id)}
+                    style={{ ...buttonStyle, background: "#b91c1c" }}
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             ))}
@@ -687,8 +855,57 @@ export default function AdminPage() {
 
         <div style={cardStyle}>
           <h2>Existing Specs</h2>
+
+          <div
+            style={{
+              marginBottom: 16,
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap",
+            }}
+          >
+            <select
+              value={specFilterSiteId}
+              onChange={(e) => setSpecFilterSiteId(e.target.value)}
+              style={{ ...inputStyle, marginBottom: 0, maxWidth: 320 }}
+            >
+              <option value="">All Sites</option>
+              {sites.map((site) => (
+                <option key={site.id} value={site.id}>
+                  {site.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={specFilterCategoryId}
+              onChange={(e) => setSpecFilterCategoryId(e.target.value)}
+              style={{ ...inputStyle, marginBottom: 0, maxWidth: 320 }}
+            >
+              <option value="">All Categories</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+
+            {(specFilterSiteId || specFilterCategoryId) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSpecFilterSiteId("");
+                  setSpecFilterCategoryId("");
+                }}
+                style={{ ...buttonStyle, background: "#6b7280" }}
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+
           <div style={{ display: "grid", gap: 12 }}>
-            {specs.map((spec) => (
+            {filteredSpecsList.map((spec) => (
               <div key={spec.id} style={specItemStyle}>
                 <h3 style={{ marginTop: 0, marginBottom: 8 }}>{spec.title}</h3>
                 <p style={{ margin: "0 0 6px", color: "#6b7280" }}>
@@ -704,16 +921,37 @@ export default function AdminPage() {
                   <strong>Updated by:</strong> {spec.updated_by_email || "Unknown"}
                 </p>
 
-                <pre style={{ whiteSpace: "pre-wrap", fontFamily: "Arial, sans-serif", margin: 0 }}>
+                <pre
+                  style={{
+                    whiteSpace: "pre-wrap",
+                    fontFamily: "Arial, sans-serif",
+                    margin: 0,
+                  }}
+                >
                   {spec.body}
                 </pre>
 
                 {getImagesForSpec(spec.id).length > 0 && (
                   <div style={{ marginTop: 16 }}>
                     <strong>Images</strong>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginTop: 10 }}>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fit, minmax(180px, 1fr))",
+                        gap: 12,
+                        marginTop: 10,
+                      }}
+                    >
                       {getImagesForSpec(spec.id).map((image) => (
-                        <div key={image.id} style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: 10 }}>
+                        <div
+                          key={image.id}
+                          style={{
+                            border: "1px solid #e5e7eb",
+                            borderRadius: 10,
+                            padding: 10,
+                          }}
+                        >
                           <img
                             src={image.image_url}
                             alt={image.caption || spec.title}
@@ -730,14 +968,25 @@ export default function AdminPage() {
                             }}
                           />
                           {image.caption && (
-                            <p style={{ margin: "8px 0 0", fontSize: 13, color: "#6b7280" }}>
+                            <p
+                              style={{
+                                margin: "8px 0 0",
+                                fontSize: 13,
+                                color: "#6b7280",
+                              }}
+                            >
                               {image.caption}
                             </p>
                           )}
                           <button
                             type="button"
                             onClick={() => deleteSpecImage(image)}
-                            style={{ ...buttonStyle, background: "#b91c1c", marginTop: 10, width: "100%" }}
+                            style={{
+                              ...buttonStyle,
+                              background: "#b91c1c",
+                              marginTop: 10,
+                              width: "100%",
+                            }}
                           >
                             Delete Image
                           </button>
@@ -747,8 +996,19 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
-                  <button type="button" onClick={() => editSpec(spec)} style={buttonStyle}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    marginTop: 14,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => editSpec(spec)}
+                    style={buttonStyle}
+                  >
                     Edit
                   </button>
                   <button
@@ -768,6 +1028,12 @@ export default function AdminPage() {
                 </div>
               </div>
             ))}
+
+            {filteredSpecsList.length === 0 && (
+              <p style={{ color: "#6b7280", marginTop: 10 }}>
+                No specs found for the selected filters.
+              </p>
+            )}
           </div>
         </div>
       </div>
