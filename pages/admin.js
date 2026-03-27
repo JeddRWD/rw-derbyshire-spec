@@ -11,6 +11,7 @@ export default function AdminPage() {
   const [categories, setCategories] = useState([]);
   const [sites, setSites] = useState([]);
   const [specs, setSpecs] = useState([]);
+  const [specImages, setSpecImages] = useState([]);
 
   const [developerName, setDeveloperName] = useState("");
   const [editingDeveloperId, setEditingDeveloperId] = useState(null);
@@ -27,6 +28,11 @@ export default function AdminPage() {
   const [specSiteId, setSpecSiteId] = useState("");
   const [specCategoryId, setSpecCategoryId] = useState("");
   const [editingSpecId, setEditingSpecId] = useState(null);
+
+  const [imageSpecId, setImageSpecId] = useState("");
+  const [imageCaption, setImageCaption] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     const loadSession = async () => {
@@ -54,11 +60,17 @@ export default function AdminPage() {
     const { data: cats } = await supabase.from("categories").select("*").order("name");
     const { data: sts } = await supabase.from("sites").select("*").order("name");
     const { data: spc } = await supabase.from("specs").select("*").order("title");
+    const { data: imgs } = await supabase
+      .from("spec_images")
+      .select("*")
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
 
     setDevelopers(devs || []);
     setCategories(cats || []);
     setSites(sts || []);
     setSpecs(spc || []);
+    setSpecImages(imgs || []);
   };
 
   const signIn = async (e) => {
@@ -74,7 +86,6 @@ export default function AdminPage() {
     await supabase.auth.signOut();
   };
 
-  // Developers
   const saveDeveloper = async (e) => {
     e.preventDefault();
     let error;
@@ -85,15 +96,10 @@ export default function AdminPage() {
         .update({ name: developerName })
         .eq("id", editingDeveloperId));
     } else {
-      ({ error } = await supabase
-        .from("developers")
-        .insert([{ name: developerName }]));
+      ({ error } = await supabase.from("developers").insert([{ name: developerName }]));
     }
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
 
     resetDeveloperForm();
     loadData();
@@ -106,18 +112,9 @@ export default function AdminPage() {
   };
 
   const deleteDeveloper = async (id) => {
-    const confirmed = window.confirm(
-      "Delete this developer? Make sure no sites still rely on it."
-    );
-    if (!confirmed) return;
-
+    if (!window.confirm("Delete this developer?")) return;
     const { error } = await supabase.from("developers").delete().eq("id", id);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
+    if (error) return alert(error.message);
     if (editingDeveloperId === id) resetDeveloperForm();
     loadData();
   };
@@ -127,7 +124,6 @@ export default function AdminPage() {
     setDeveloperName("");
   };
 
-  // Categories
   const saveCategory = async (e) => {
     e.preventDefault();
     let error;
@@ -138,15 +134,10 @@ export default function AdminPage() {
         .update({ name: categoryName })
         .eq("id", editingCategoryId));
     } else {
-      ({ error } = await supabase
-        .from("categories")
-        .insert([{ name: categoryName }]));
+      ({ error } = await supabase.from("categories").insert([{ name: categoryName }]));
     }
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
 
     resetCategoryForm();
     loadData();
@@ -159,18 +150,9 @@ export default function AdminPage() {
   };
 
   const deleteCategory = async (id) => {
-    const confirmed = window.confirm(
-      "Delete this category? Make sure no specs still rely on it."
-    );
-    if (!confirmed) return;
-
+    if (!window.confirm("Delete this category?")) return;
     const { error } = await supabase.from("categories").delete().eq("id", id);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
+    if (error) return alert(error.message);
     if (editingCategoryId === id) resetCategoryForm();
     loadData();
   };
@@ -180,14 +162,9 @@ export default function AdminPage() {
     setCategoryName("");
   };
 
-  // Sites
   const saveSite = async (e) => {
     e.preventDefault();
-    const payload = {
-      name: siteName,
-      developer_id: siteDeveloperId,
-    };
-
+    const payload = { name: siteName, developer_id: siteDeveloperId };
     let error;
 
     if (editingSiteId) {
@@ -196,10 +173,7 @@ export default function AdminPage() {
       ({ error } = await supabase.from("sites").insert([payload]));
     }
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
 
     resetSiteForm();
     loadData();
@@ -213,18 +187,9 @@ export default function AdminPage() {
   };
 
   const deleteSite = async (id) => {
-    const confirmed = window.confirm(
-      "Delete this site? Make sure no specs still rely on it."
-    );
-    if (!confirmed) return;
-
+    if (!window.confirm("Delete this site?")) return;
     const { error } = await supabase.from("sites").delete().eq("id", id);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
+    if (error) return alert(error.message);
     if (editingSiteId === id) resetSiteForm();
     loadData();
   };
@@ -235,7 +200,6 @@ export default function AdminPage() {
     setSiteDeveloperId("");
   };
 
-  // Specs
   const saveSpec = async (e) => {
     e.preventDefault();
 
@@ -255,10 +219,7 @@ export default function AdminPage() {
       ({ error } = await supabase.from("specs").insert([payload]));
     }
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
 
     resetSpecForm();
     loadData();
@@ -270,20 +231,14 @@ export default function AdminPage() {
     setSpecBody(spec.body || "");
     setSpecSiteId(spec.site_id || "");
     setSpecCategoryId(spec.category_id || "");
+    setImageSpecId(spec.id);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const deleteSpec = async (id) => {
-    const confirmed = window.confirm("Are you sure you want to delete this spec?");
-    if (!confirmed) return;
-
+    if (!window.confirm("Delete this spec?")) return;
     const { error } = await supabase.from("specs").delete().eq("id", id);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
+    if (error) return alert(error.message);
     if (editingSpecId === id) resetSpecForm();
     loadData();
   };
@@ -296,6 +251,75 @@ export default function AdminPage() {
     setSpecCategoryId("");
   };
 
+  const uploadSpecImage = async (e) => {
+    e.preventDefault();
+
+    if (!imageSpecId) return alert("Please select a spec.");
+    if (!imageFile) return alert("Please choose an image.");
+
+    try {
+      setUploadingImage(true);
+
+      const fileExt = imageFile.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+      const filePath = `${imageSpecId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("spec-images")
+        .upload(filePath, imageFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicData } = supabase.storage
+        .from("spec-images")
+        .getPublicUrl(filePath);
+
+      const { error: dbError } = await supabase.from("spec_images").insert([
+        {
+          spec_id: imageSpecId,
+          image_url: publicData.publicUrl,
+          caption: imageCaption || null,
+        },
+      ]);
+
+      if (dbError) throw dbError;
+
+      setImageFile(null);
+      setImageCaption("");
+      const fileInput = document.getElementById("spec-image-upload");
+      if (fileInput) fileInput.value = "";
+
+      await loadData();
+      alert("Image uploaded");
+    } catch (error) {
+      alert(error.message || "Upload failed");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const deleteSpecImage = async (image) => {
+    if (!window.confirm("Delete this image?")) return;
+
+    try {
+      const url = new URL(image.image_url);
+      const marker = "/storage/v1/object/public/spec-images/";
+      const index = url.pathname.indexOf(marker);
+      const storagePath = index >= 0 ? decodeURIComponent(url.pathname.slice(index + marker.length)) : null;
+
+      if (storagePath) {
+        await supabase.storage.from("spec-images").remove([storagePath]);
+      }
+
+      const { error } = await supabase.from("spec_images").delete().eq("id", image.id);
+      if (error) throw error;
+
+      await loadData();
+    } catch (error) {
+      alert(error.message || "Delete failed");
+    }
+  };
+
   const getSiteName = (id) =>
     sites.find((site) => String(site.id) === String(id))?.name || "";
 
@@ -305,28 +329,17 @@ export default function AdminPage() {
   const getDeveloperName = (id) =>
     developers.find((developer) => String(developer.id) === String(id))?.name || "";
 
+  const getImagesForSpec = (specId) =>
+    specImages.filter((image) => String(image.spec_id) === String(specId));
+
   if (!session) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "grid",
-          placeItems: "center",
-          background: "#f4f6f8",
-        }}
-      >
+      <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#f4f6f8" }}>
         <form
           onSubmit={signIn}
-          style={{
-            width: 360,
-            background: "#fff",
-            padding: 30,
-            borderRadius: 12,
-            border: "1px solid #e5e7eb",
-          }}
+          style={{ width: 360, background: "#fff", padding: 30, borderRadius: 12, border: "1px solid #e5e7eb" }}
         >
           <h1 style={{ marginTop: 0 }}>Admin Login</h1>
-
           <input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -334,7 +347,6 @@ export default function AdminPage() {
             placeholder="Email"
             style={{ width: "100%", padding: 12, marginBottom: 12 }}
           />
-
           <input
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -342,17 +354,9 @@ export default function AdminPage() {
             placeholder="Password"
             style={{ width: "100%", padding: 12, marginBottom: 12 }}
           />
-
           <button
             type="submit"
-            style={{
-              width: "100%",
-              padding: 12,
-              border: "none",
-              background: "#1f3b63",
-              color: "#fff",
-              cursor: "pointer",
-            }}
+            style={{ width: "100%", padding: 12, border: "none", background: "#1f3b63", color: "#fff", cursor: "pointer" }}
           >
             Sign In
           </button>
@@ -364,56 +368,21 @@ export default function AdminPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#f4f6f8", padding: 30 }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 24,
-          }}
-        >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <h1 style={{ margin: 0 }}>Admin Panel</h1>
-          <button
-            onClick={signOut}
-            style={{
-              padding: "10px 14px",
-              border: "none",
-              borderRadius: 8,
-              background: "#1f3b63",
-              color: "#fff",
-              cursor: "pointer",
-            }}
-          >
-            Sign Out
-          </button>
+          <button onClick={signOut} style={buttonStyle}>Sign Out</button>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 20,
-            marginBottom: 20,
-          }}
-        >
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
           <form onSubmit={saveDeveloper} style={cardStyle}>
             <h2>{editingDeveloperId ? "Edit Developer" : "Add Developer"}</h2>
-            <input
-              value={developerName}
-              onChange={(e) => setDeveloperName(e.target.value)}
-              placeholder="Developer name"
-              style={inputStyle}
-            />
+            <input value={developerName} onChange={(e) => setDeveloperName(e.target.value)} placeholder="Developer name" style={inputStyle} />
             <div style={{ display: "flex", gap: 10 }}>
               <button type="submit" style={buttonStyle}>
                 {editingDeveloperId ? "Update Developer" : "Save Developer"}
               </button>
               {editingDeveloperId && (
-                <button
-                  type="button"
-                  onClick={resetDeveloperForm}
-                  style={{ ...buttonStyle, background: "#6b7280" }}
-                >
+                <button type="button" onClick={resetDeveloperForm} style={{ ...buttonStyle, background: "#6b7280" }}>
                   Cancel
                 </button>
               )}
@@ -422,22 +391,13 @@ export default function AdminPage() {
 
           <form onSubmit={saveCategory} style={cardStyle}>
             <h2>{editingCategoryId ? "Edit Category" : "Add Category"}</h2>
-            <input
-              value={categoryName}
-              onChange={(e) => setCategoryName(e.target.value)}
-              placeholder="Category name"
-              style={inputStyle}
-            />
+            <input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="Category name" style={inputStyle} />
             <div style={{ display: "flex", gap: 10 }}>
               <button type="submit" style={buttonStyle}>
                 {editingCategoryId ? "Update Category" : "Save Category"}
               </button>
               {editingCategoryId && (
-                <button
-                  type="button"
-                  onClick={resetCategoryForm}
-                  style={{ ...buttonStyle, background: "#6b7280" }}
-                >
+                <button type="button" onClick={resetCategoryForm} style={{ ...buttonStyle, background: "#6b7280" }}>
                   Cancel
                 </button>
               )}
@@ -447,36 +407,19 @@ export default function AdminPage() {
 
         <form onSubmit={saveSite} style={{ ...cardStyle, marginBottom: 20 }}>
           <h2>{editingSiteId ? "Edit Site" : "Add Site"}</h2>
-          <input
-            value={siteName}
-            onChange={(e) => setSiteName(e.target.value)}
-            placeholder="Site name"
-            style={inputStyle}
-          />
-
-          <select
-            value={siteDeveloperId}
-            onChange={(e) => setSiteDeveloperId(e.target.value)}
-            style={inputStyle}
-          >
+          <input value={siteName} onChange={(e) => setSiteName(e.target.value)} placeholder="Site name" style={inputStyle} />
+          <select value={siteDeveloperId} onChange={(e) => setSiteDeveloperId(e.target.value)} style={inputStyle}>
             <option value="">Select Developer</option>
             {developers.map((developer) => (
-              <option key={developer.id} value={developer.id}>
-                {developer.name}
-              </option>
+              <option key={developer.id} value={developer.id}>{developer.name}</option>
             ))}
           </select>
-
           <div style={{ display: "flex", gap: 10 }}>
             <button type="submit" style={buttonStyle}>
               {editingSiteId ? "Update Site" : "Save Site"}
             </button>
             {editingSiteId && (
-              <button
-                type="button"
-                onClick={resetSiteForm}
-                style={{ ...buttonStyle, background: "#6b7280" }}
-              >
+              <button type="button" onClick={resetSiteForm} style={{ ...buttonStyle, background: "#6b7280" }}>
                 Cancel
               </button>
             )}
@@ -485,40 +428,19 @@ export default function AdminPage() {
 
         <form onSubmit={saveSpec} style={{ ...cardStyle, marginBottom: 20 }}>
           <h2>{editingSpecId ? "Edit Spec" : "Add Spec"}</h2>
-
-          <input
-            value={specTitle}
-            onChange={(e) => setSpecTitle(e.target.value)}
-            placeholder="Spec title"
-            style={inputStyle}
-          />
-
-          <select
-            value={specSiteId}
-            onChange={(e) => setSpecSiteId(e.target.value)}
-            style={inputStyle}
-          >
+          <input value={specTitle} onChange={(e) => setSpecTitle(e.target.value)} placeholder="Spec title" style={inputStyle} />
+          <select value={specSiteId} onChange={(e) => setSpecSiteId(e.target.value)} style={inputStyle}>
             <option value="">Select Site</option>
             {sites.map((site) => (
-              <option key={site.id} value={site.id}>
-                {site.name}
-              </option>
+              <option key={site.id} value={site.id}>{site.name}</option>
             ))}
           </select>
-
-          <select
-            value={specCategoryId}
-            onChange={(e) => setSpecCategoryId(e.target.value)}
-            style={inputStyle}
-          >
+          <select value={specCategoryId} onChange={(e) => setSpecCategoryId(e.target.value)} style={inputStyle}>
             <option value="">Select Category</option>
             {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
+              <option key={category.id} value={category.id}>{category.name}</option>
             ))}
           </select>
-
           <textarea
             value={specBody}
             onChange={(e) => setSpecBody(e.target.value)}
@@ -526,22 +448,42 @@ export default function AdminPage() {
             rows={8}
             style={{ ...inputStyle, resize: "vertical" }}
           />
-
           <div style={{ display: "flex", gap: 10 }}>
             <button type="submit" style={buttonStyle}>
               {editingSpecId ? "Update Spec" : "Save Spec"}
             </button>
-
             {editingSpecId && (
-              <button
-                type="button"
-                onClick={resetSpecForm}
-                style={{ ...buttonStyle, background: "#6b7280" }}
-              >
+              <button type="button" onClick={resetSpecForm} style={{ ...buttonStyle, background: "#6b7280" }}>
                 Cancel Edit
               </button>
             )}
           </div>
+        </form>
+
+        <form onSubmit={uploadSpecImage} style={{ ...cardStyle, marginBottom: 20 }}>
+          <h2>Upload Image to Spec</h2>
+          <select value={imageSpecId} onChange={(e) => setImageSpecId(e.target.value)} style={inputStyle}>
+            <option value="">Select Spec</option>
+            {specs.map((spec) => (
+              <option key={spec.id} value={spec.id}>{spec.title} - {getSiteName(spec.site_id)}</option>
+            ))}
+          </select>
+          <input
+            id="spec-image-upload"
+            type="file"
+            accept="image/*"
+            onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+            style={inputStyle}
+          />
+          <input
+            value={imageCaption}
+            onChange={(e) => setImageCaption(e.target.value)}
+            placeholder="Image caption (optional)"
+            style={inputStyle}
+          />
+          <button type="submit" style={buttonStyle} disabled={uploadingImage}>
+            {uploadingImage ? "Uploading..." : "Upload Image"}
+          </button>
         </form>
 
         <div style={{ ...cardStyle, marginBottom: 20 }}>
@@ -549,24 +491,10 @@ export default function AdminPage() {
           <div style={{ display: "grid", gap: 12 }}>
             {developers.map((developer) => (
               <div key={developer.id} style={listItemStyle}>
-                <div>
-                  <strong>{developer.name}</strong>
-                </div>
+                <strong>{developer.name}</strong>
                 <div style={{ display: "flex", gap: 10 }}>
-                  <button
-                    type="button"
-                    onClick={() => editDeveloper(developer)}
-                    style={buttonStyle}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => deleteDeveloper(developer.id)}
-                    style={{ ...buttonStyle, background: "#b91c1c" }}
-                  >
-                    Delete
-                  </button>
+                  <button type="button" onClick={() => editDeveloper(developer)} style={buttonStyle}>Edit</button>
+                  <button type="button" onClick={() => deleteDeveloper(developer.id)} style={{ ...buttonStyle, background: "#b91c1c" }}>Delete</button>
                 </div>
               </div>
             ))}
@@ -578,24 +506,10 @@ export default function AdminPage() {
           <div style={{ display: "grid", gap: 12 }}>
             {categories.map((category) => (
               <div key={category.id} style={listItemStyle}>
-                <div>
-                  <strong>{category.name}</strong>
-                </div>
+                <strong>{category.name}</strong>
                 <div style={{ display: "flex", gap: 10 }}>
-                  <button
-                    type="button"
-                    onClick={() => editCategory(category)}
-                    style={buttonStyle}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => deleteCategory(category.id)}
-                    style={{ ...buttonStyle, background: "#b91c1c" }}
-                  >
-                    Delete
-                  </button>
+                  <button type="button" onClick={() => editCategory(category)} style={buttonStyle}>Edit</button>
+                  <button type="button" onClick={() => deleteCategory(category.id)} style={{ ...buttonStyle, background: "#b91c1c" }}>Delete</button>
                 </div>
               </div>
             ))}
@@ -614,20 +528,8 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>
-                  <button
-                    type="button"
-                    onClick={() => editSite(site)}
-                    style={buttonStyle}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => deleteSite(site.id)}
-                    style={{ ...buttonStyle, background: "#b91c1c" }}
-                  >
-                    Delete
-                  </button>
+                  <button type="button" onClick={() => editSite(site)} style={buttonStyle}>Edit</button>
+                  <button type="button" onClick={() => deleteSite(site.id)} style={{ ...buttonStyle, background: "#b91c1c" }}>Delete</button>
                 </div>
               </div>
             ))}
@@ -646,32 +548,40 @@ export default function AdminPage() {
                 <p style={{ margin: "0 0 12px", color: "#6b7280" }}>
                   <strong>Category:</strong> {getCategoryName(spec.category_id)}
                 </p>
-                <pre
-                  style={{
-                    whiteSpace: "pre-wrap",
-                    fontFamily: "Arial, sans-serif",
-                    margin: 0,
-                  }}
-                >
+                <pre style={{ whiteSpace: "pre-wrap", fontFamily: "Arial, sans-serif", margin: 0 }}>
                   {spec.body}
                 </pre>
 
-                <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-                  <button
-                    type="button"
-                    onClick={() => editSpec(spec)}
-                    style={buttonStyle}
-                  >
-                    Edit
-                  </button>
+                {getImagesForSpec(spec.id).length > 0 && (
+                  <div style={{ marginTop: 16 }}>
+                    <strong>Images</strong>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginTop: 10 }}>
+                      {getImagesForSpec(spec.id).map((image) => (
+                        <div key={image.id} style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: 10 }}>
+                          <img
+                            src={image.image_url}
+                            alt={image.caption || spec.title}
+                            style={{ width: "100%", height: 140, objectFit: "cover", borderRadius: 8, display: "block" }}
+                          />
+                          {image.caption && (
+                            <p style={{ margin: "8px 0 0", fontSize: 13, color: "#6b7280" }}>{image.caption}</p>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => deleteSpecImage(image)}
+                            style={{ ...buttonStyle, background: "#b91c1c", marginTop: 10, width: "100%" }}
+                          >
+                            Delete Image
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-                  <button
-                    type="button"
-                    onClick={() => deleteSpec(spec.id)}
-                    style={{ ...buttonStyle, background: "#b91c1c" }}
-                  >
-                    Delete
-                  </button>
+                <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+                  <button type="button" onClick={() => editSpec(spec)} style={buttonStyle}>Edit</button>
+                  <button type="button" onClick={() => deleteSpec(spec.id)} style={{ ...buttonStyle, background: "#b91c1c" }}>Delete</button>
                 </div>
               </div>
             ))}
