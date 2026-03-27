@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { supabase } from "../lib/supabaseClient";
@@ -62,8 +62,8 @@ export default function Home() {
       )
     : [];
 
-  const getCategory = (id) =>
-    categories.find((c) => String(c.id) === String(id))?.name || "";
+  const getCategoryName = (id) =>
+    categories.find((c) => String(c.id) === String(id))?.name || "Uncategorised";
 
   const getCategorySortOrder = (id) =>
     categories.find((c) => String(c.id) === String(id))?.sort_order ?? 999;
@@ -71,21 +71,45 @@ export default function Home() {
   const getImagesForSpec = (specId) =>
     specImages.filter((image) => String(image.spec_id) === String(specId));
 
-  const filteredSpecs =
-    selectedDeveloper && selectedSite
-      ? specs
-          .filter((spec) => String(spec.site_id) === String(selectedSite))
-          .sort((a, b) => {
-            const categoryA = getCategorySortOrder(a.category_id);
-            const categoryB = getCategorySortOrder(b.category_id);
+  const filteredSpecs = useMemo(() => {
+    if (!selectedDeveloper || !selectedSite) return [];
 
-            if (categoryA !== categoryB) {
-              return categoryA - categoryB;
-            }
+    return specs
+      .filter((spec) => String(spec.site_id) === String(selectedSite))
+      .sort((a, b) => {
+        const categoryA = getCategorySortOrder(a.category_id);
+        const categoryB = getCategorySortOrder(b.category_id);
 
-            return (a.title || "").localeCompare(b.title || "");
-          })
-      : [];
+        if (categoryA !== categoryB) {
+          return categoryA - categoryB;
+        }
+
+        return (a.title || "").localeCompare(b.title || "");
+      });
+  }, [selectedDeveloper, selectedSite, specs, categories]);
+
+  const groupedSpecs = useMemo(() => {
+    const groups = [];
+
+    filteredSpecs.forEach((spec) => {
+      const existingGroup = groups.find(
+        (group) => String(group.categoryId) === String(spec.category_id)
+      );
+
+      if (existingGroup) {
+        existingGroup.specs.push(spec);
+      } else {
+        groups.push({
+          categoryId: spec.category_id,
+          categoryName: getCategoryName(spec.category_id),
+          categorySortOrder: getCategorySortOrder(spec.category_id),
+          specs: [spec],
+        });
+      }
+    });
+
+    return groups.sort((a, b) => a.categorySortOrder - b.categorySortOrder);
+  }, [filteredSpecs, categories]);
 
   return (
     <>
@@ -94,6 +118,7 @@ export default function Home() {
           margin: 0;
           font-family: Arial, sans-serif;
           background: #f4f6f8;
+          color: #1f2937;
         }
 
         @media print {
@@ -110,6 +135,10 @@ export default function Home() {
             border: 1px solid #ccc !important;
             break-inside: avoid;
             page-break-inside: avoid;
+          }
+
+          .print-category {
+            margin-top: 24px !important;
           }
         }
       `}</style>
@@ -239,75 +268,91 @@ export default function Home() {
             </div>
           )}
 
-          {filteredSpecs.map((spec) => (
+          {groupedSpecs.map((group) => (
             <div
-              key={spec.id}
-              className="print-card"
-              style={{
-                background: "#fff",
-                padding: 20,
-                borderRadius: 12,
-                border: "1px solid #e5e7eb",
-                marginBottom: 15,
-              }}
+              key={group.categoryId}
+              className="print-category"
+              style={{ marginBottom: 28 }}
             >
-              <h3 style={{ marginTop: 0 }}>{spec.title}</h3>
-              <p style={{ color: "#6b7280", marginTop: 0 }}>
-                {getCategory(spec.category_id)}
-              </p>
+              <div
+                style={{
+                  marginBottom: 12,
+                  paddingBottom: 8,
+                  borderBottom: "2px solid #1f3b63",
+                }}
+              >
+                <h2 style={{ margin: 0, fontSize: 22 }}>{group.categoryName}</h2>
+              </div>
 
-              <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
-                {spec.body}
-              </p>
+              {group.specs.map((spec) => (
+                <div
+                  key={spec.id}
+                  className="print-card"
+                  style={{
+                    background: "#fff",
+                    padding: 20,
+                    borderRadius: 12,
+                    border: "1px solid #e5e7eb",
+                    marginBottom: 15,
+                  }}
+                >
+                  <h3 style={{ marginTop: 0, marginBottom: 10 }}>{spec.title}</h3>
 
-              {getImagesForSpec(spec.id).length > 0 && (
-                <div style={{ marginTop: 16 }}>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                      gap: 12,
-                    }}
-                  >
-                    {getImagesForSpec(spec.id).map((image) => (
-                      <div key={image.id}>
-                        <img
-                          src={image.image_url}
-                          alt={image.caption || spec.title}
-                          style={{
-                            width: "100%",
-                            maxHeight: 180,
-                            objectFit: "contain",
-                            borderRadius: 10,
-                            border: "1px solid #e5e7eb",
-                            display: "block",
-                            background: "#f9fafb",
-                            padding: 6,
-                            boxSizing: "border-box",
-                          }}
-                        />
-                        {image.caption && (
-                          <p
-                            style={{
-                              marginTop: 8,
-                              color: "#6b7280",
-                              fontSize: 14,
-                            }}
-                          >
-                            {image.caption}
-                          </p>
-                        )}
+                  <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, margin: 0 }}>
+                    {spec.body}
+                  </p>
+
+                  {getImagesForSpec(spec.id).length > 0 && (
+                    <div style={{ marginTop: 16 }}>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "repeat(auto-fit, minmax(220px, 1fr))",
+                          gap: 12,
+                        }}
+                      >
+                        {getImagesForSpec(spec.id).map((image) => (
+                          <div key={image.id}>
+                            <img
+                              src={image.image_url}
+                              alt={image.caption || spec.title}
+                              style={{
+                                width: "100%",
+                                maxHeight: 180,
+                                objectFit: "contain",
+                                borderRadius: 10,
+                                border: "1px solid #e5e7eb",
+                                display: "block",
+                                background: "#f9fafb",
+                                padding: 6,
+                                boxSizing: "border-box",
+                              }}
+                            />
+                            {image.caption && (
+                              <p
+                                style={{
+                                  marginTop: 8,
+                                  color: "#6b7280",
+                                  fontSize: 14,
+                                }}
+                              >
+                                {image.caption}
+                              </p>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              ))}
             </div>
           ))}
 
-          {selectedDeveloper &&
-            selectedSite &&
-            filteredSpecs.length === 0 && <p>No specs found.</p>}
+          {selectedDeveloper && selectedSite && groupedSpecs.length === 0 && (
+            <p>No specs found.</p>
+          )}
         </main>
       </div>
     </>
