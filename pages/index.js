@@ -257,16 +257,17 @@ export default function Home() {
                   >
                     {getImagesForSpec(spec.id).map((image) => (
                       <div key={image.id}>
-                        <img
+                       <img
   src={image.image_url}
   alt={image.caption || spec.title}
   style={{
     width: "100%",
-    height: 180,
-    objectFit: "cover",
+    maxHeight: 180,
+    objectFit: "contain",
     borderRadius: 10,
     border: "1px solid #e5e7eb",
     display: "block",
+    background: "#fff",
   }}
 />
                         {image.caption && (
