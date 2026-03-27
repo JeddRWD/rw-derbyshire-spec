@@ -31,12 +31,12 @@ export default function Home() {
     const { data: cats } = await supabase
       .from("categories")
       .select("*")
-      .order("name");
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true });
 
     const { data: spc } = await supabase
       .from("specs")
-      .select("*")
-      .order("title");
+      .select("*");
 
     const { data: imgs } = await supabase
       .from("spec_images")
@@ -62,16 +62,30 @@ export default function Home() {
       )
     : [];
 
-  const filteredSpecs =
-    selectedDeveloper && selectedSite
-      ? specs.filter((spec) => String(spec.site_id) === String(selectedSite))
-      : [];
-
   const getCategory = (id) =>
     categories.find((c) => String(c.id) === String(id))?.name || "";
 
+  const getCategorySortOrder = (id) =>
+    categories.find((c) => String(c.id) === String(id))?.sort_order ?? 999;
+
   const getImagesForSpec = (specId) =>
     specImages.filter((image) => String(image.spec_id) === String(specId));
+
+  const filteredSpecs =
+    selectedDeveloper && selectedSite
+      ? specs
+          .filter((spec) => String(spec.site_id) === String(selectedSite))
+          .sort((a, b) => {
+            const categoryA = getCategorySortOrder(a.category_id);
+            const categoryB = getCategorySortOrder(b.category_id);
+
+            if (categoryA !== categoryB) {
+              return categoryA - categoryB;
+            }
+
+            return (a.title || "").localeCompare(b.title || "");
+          })
+      : [];
 
   return (
     <>
@@ -127,7 +141,7 @@ export default function Home() {
               />
 
               <div>
-                <h1 style={{ margin: 0 }}>RWD Spec Hub</h1>
+                <h1 style={{ margin: 0 }}>RW Derbyshire Spec Hub</h1>
                 <p style={{ margin: 0, color: "#6b7280", fontSize: 14 }}>
                   Electrical installation specifications
                 </p>
@@ -251,25 +265,27 @@ export default function Home() {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
                       gap: 12,
                     }}
                   >
                     {getImagesForSpec(spec.id).map((image) => (
                       <div key={image.id}>
-                       <img
-  src={image.image_url}
-  alt={image.caption || spec.title}
-  style={{
-    width: "100%",
-    maxHeight: 180,
-    objectFit: "contain",
-    borderRadius: 10,
-    border: "1px solid #e5e7eb",
-    display: "block",
-    background: "#fff",
-  }}
-/>
+                        <img
+                          src={image.image_url}
+                          alt={image.caption || spec.title}
+                          style={{
+                            width: "100%",
+                            maxHeight: 180,
+                            objectFit: "contain",
+                            borderRadius: 10,
+                            border: "1px solid #e5e7eb",
+                            display: "block",
+                            background: "#f9fafb",
+                            padding: 6,
+                            boxSizing: "border-box",
+                          }}
+                        />
                         {image.caption && (
                           <p
                             style={{
