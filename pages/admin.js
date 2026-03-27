@@ -34,6 +34,9 @@ export default function AdminPage() {
   const [imageFile, setImageFile] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
+  const [copyingSpec, setCopyingSpec] = useState(null);
+  const [copySiteId, setCopySiteId] = useState("");
+
   useEffect(() => {
     const loadSession = async () => {
       const { data, error } = await supabase.auth.getSession();
@@ -302,6 +305,38 @@ export default function AdminPage() {
     setSpecCategoryId("");
   };
 
+  const startCopySpec = (spec) => {
+    setCopyingSpec(spec);
+    setCopySiteId("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const copySpecToSite = async (e) => {
+    e.preventDefault();
+
+    if (!copyingSpec) return;
+    if (!copySiteId) return alert("Please select a site to copy to.");
+
+    const { error } = await supabase.from("specs").insert([
+      {
+        title: copyingSpec.title,
+        body: copyingSpec.body,
+        site_id: copySiteId,
+        category_id: copyingSpec.category_id,
+        updated_at: new Date().toISOString().slice(0, 10),
+        created_by_email: session.user.email,
+        updated_by_email: session.user.email,
+      },
+    ]);
+
+    if (error) return alert(error.message);
+
+    setCopyingSpec(null);
+    setCopySiteId("");
+    loadData();
+    alert("Spec copied successfully");
+  };
+
   const uploadSpecImage = async (e) => {
     e.preventDefault();
 
@@ -514,6 +549,42 @@ export default function AdminPage() {
           </div>
         </form>
 
+        {copyingSpec && (
+          <form onSubmit={copySpecToSite} style={{ ...cardStyle, marginBottom: 20 }}>
+            <h2>Copy Spec to Another Site</h2>
+            <p style={{ marginTop: 0, color: "#6b7280" }}>
+              <strong>Spec:</strong> {copyingSpec.title}
+            </p>
+            <select
+              value={copySiteId}
+              onChange={(e) => setCopySiteId(e.target.value)}
+              style={inputStyle}
+            >
+              <option value="">Select Site</option>
+              {sites.map((site) => (
+                <option key={site.id} value={site.id}>
+                  {site.name}
+                </option>
+              ))}
+            </select>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button type="submit" style={{ ...buttonStyle, background: "#0f766e" }}>
+                Copy Spec
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCopyingSpec(null);
+                  setCopySiteId("");
+                }}
+                style={{ ...buttonStyle, background: "#6b7280" }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+
         <form onSubmit={uploadSpecImage} style={{ ...cardStyle, marginBottom: 20 }}>
           <h2>Upload Image to Spec</h2>
           <select value={imageSpecId} onChange={(e) => setImageSpecId(e.target.value)} style={inputStyle}>
@@ -632,6 +703,7 @@ export default function AdminPage() {
                 <p style={{ margin: "0 0 12px", color: "#6b7280" }}>
                   <strong>Updated by:</strong> {spec.updated_by_email || "Unknown"}
                 </p>
+
                 <pre style={{ whiteSpace: "pre-wrap", fontFamily: "Arial, sans-serif", margin: 0 }}>
                   {spec.body}
                 </pre>
@@ -658,7 +730,9 @@ export default function AdminPage() {
                             }}
                           />
                           {image.caption && (
-                            <p style={{ margin: "8px 0 0", fontSize: 13, color: "#6b7280" }}>{image.caption}</p>
+                            <p style={{ margin: "8px 0 0", fontSize: 13, color: "#6b7280" }}>
+                              {image.caption}
+                            </p>
                           )}
                           <button
                             type="button"
@@ -673,9 +747,24 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-                  <button type="button" onClick={() => editSpec(spec)} style={buttonStyle}>Edit</button>
-                  <button type="button" onClick={() => deleteSpec(spec.id)} style={{ ...buttonStyle, background: "#b91c1c" }}>Delete</button>
+                <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
+                  <button type="button" onClick={() => editSpec(spec)} style={buttonStyle}>
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => startCopySpec(spec)}
+                    style={{ ...buttonStyle, background: "#0f766e" }}
+                  >
+                    Copy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteSpec(spec.id)}
+                    style={{ ...buttonStyle, background: "#b91c1c" }}
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             ))}
