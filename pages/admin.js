@@ -36,7 +36,7 @@ export default function AdminPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
 
   const [copyingSpec, setCopyingSpec] = useState(null);
-  const [copySiteId, setCopySiteId] = useState("");
+  const [copySiteIds, setCopySiteIds] = useState([]);
 
   const [specFilterSiteId, setSpecFilterSiteId] = useState("");
   const [specFilterCategoryId, setSpecFilterCategoryId] = useState("");
@@ -332,34 +332,44 @@ export default function AdminPage() {
 
   const startCopySpec = (spec) => {
     setCopyingSpec(spec);
-    setCopySiteId("");
+    setCopySiteIds([]);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const toggleCopySite = (siteId) => {
+    setCopySiteIds((prev) =>
+      prev.includes(siteId)
+        ? prev.filter((id) => id !== siteId)
+        : [...prev, siteId]
+    );
   };
 
   const copySpecToSite = async (e) => {
     e.preventDefault();
 
     if (!copyingSpec) return;
-    if (!copySiteId) return alert("Please select a site to copy to.");
+    if (copySiteIds.length === 0) {
+      return alert("Please select at least one site to copy to.");
+    }
 
-    const { error } = await supabase.from("specs").insert([
-      {
-        title: copyingSpec.title,
-        body: copyingSpec.body,
-        site_id: copySiteId,
-        category_id: copyingSpec.category_id,
-        updated_at: new Date().toISOString().slice(0, 10),
-        created_by_email: session.user.email,
-        updated_by_email: session.user.email,
-      },
-    ]);
+    const rowsToInsert = copySiteIds.map((siteId) => ({
+      title: copyingSpec.title,
+      body: copyingSpec.body,
+      site_id: siteId,
+      category_id: copyingSpec.category_id,
+      updated_at: new Date().toISOString().slice(0, 10),
+      created_by_email: session.user.email,
+      updated_by_email: session.user.email,
+    }));
+
+    const { error } = await supabase.from("specs").insert(rowsToInsert);
 
     if (error) return alert(error.message);
 
     setCopyingSpec(null);
-    setCopySiteId("");
+    setCopySiteIds([]);
     loadData();
-    alert("Spec copied successfully");
+    alert("Spec copied successfully to selected sites");
   };
 
   const uploadSpecImage = async (e) => {
@@ -461,6 +471,10 @@ export default function AdminPage() {
 
     return siteMatches && categoryMatches;
   });
+
+  const availableCopySites = copyingSpec
+    ? sites.filter((site) => String(site.id) !== String(copyingSpec.site_id))
+    : [];
 
   if (!session) {
     return (
@@ -696,34 +710,74 @@ export default function AdminPage() {
 
         {copyingSpec && (
           <form onSubmit={copySpecToSite} style={{ ...cardStyle, marginBottom: 20 }}>
-            <h2>Copy Spec to Another Site</h2>
+            <h2>Copy Spec to Multiple Sites</h2>
+
             <p style={{ marginTop: 0, color: "#6b7280" }}>
               <strong>Spec:</strong> {copyingSpec.title}
             </p>
-            <select
-              value={copySiteId}
-              onChange={(e) => setCopySiteId(e.target.value)}
-              style={inputStyle}
+
+            <div
+              style={{
+                border: "1px solid #d1d5db",
+                borderRadius: 8,
+                padding: 12,
+                maxHeight: 260,
+                overflowY: "auto",
+                background: "#fff",
+                marginBottom: 12,
+              }}
             >
-              <option value="">Select Site</option>
-              {sites.map((site) => (
-                <option key={site.id} value={site.id}>
-                  {site.name}
-                </option>
+              {availableCopySites.map((site) => (
+                <label
+                  key={site.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "8px 0",
+                    borderBottom: "1px solid #f1f5f9",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={copySiteIds.includes(site.id)}
+                    onChange={() => toggleCopySite(site.id)}
+                  />
+                  <span>{site.name}</span>
+                </label>
               ))}
-            </select>
-            <div style={{ display: "flex", gap: 10 }}>
+            </div>
+
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button
+                type="button"
+                onClick={() => setCopySiteIds(availableCopySites.map((site) => site.id))}
+                style={{ ...buttonStyle, background: "#475569" }}
+              >
+                Select All
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCopySiteIds([])}
+                style={{ ...buttonStyle, background: "#6b7280" }}
+              >
+                Clear
+              </button>
+
               <button
                 type="submit"
                 style={{ ...buttonStyle, background: "#0f766e" }}
               >
                 Copy Spec
               </button>
+
               <button
                 type="button"
                 onClick={() => {
                   setCopyingSpec(null);
-                  setCopySiteId("");
+                  setCopySiteIds([]);
                 }}
                 style={{ ...buttonStyle, background: "#6b7280" }}
               >
