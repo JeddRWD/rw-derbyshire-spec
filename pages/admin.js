@@ -87,37 +87,34 @@ export default function AdminPage() {
   };
 
   const saveDeveloper = async (e) => {
-  e.preventDefault();
-  let error;
+    e.preventDefault();
+    let error;
 
-  if (editingDeveloperId) {
-    ({ error } = await supabase
-      .from("developers")
-      .update({
-        name: developerName,
-        updated_by_email: session.user.email,
-      })
-      .eq("id", editingDeveloperId));
-  } else {
-    ({ error } = await supabase
-      .from("developers")
-      .insert([
-        {
+    if (editingDeveloperId) {
+      ({ error } = await supabase
+        .from("developers")
+        .update({
           name: developerName,
-          created_by_email: session.user.email,
           updated_by_email: session.user.email,
-        },
-      ]));
-  }
+        })
+        .eq("id", editingDeveloperId));
+    } else {
+      ({ error } = await supabase
+        .from("developers")
+        .insert([
+          {
+            name: developerName,
+            created_by_email: session.user.email,
+            updated_by_email: session.user.email,
+          },
+        ]));
+    }
 
-  if (error) {
-    alert(error.message);
-    return;
-  }
+    if (error) return alert(error.message);
 
-  resetDeveloperForm();
-  loadData();
-};
+    resetDeveloperForm();
+    loadData();
+  };
 
   const editDeveloper = (developer) => {
     setEditingDeveloperId(developer.id);
@@ -139,37 +136,35 @@ export default function AdminPage() {
   };
 
   const saveCategory = async (e) => {
-  e.preventDefault();
-  let error;
+    e.preventDefault();
+    let error;
 
-  if (editingCategoryId) {
-    ({ error } = await supabase
-      .from("categories")
-      .update({
-        name: categoryName,
-        updated_by_email: session.user.email,
-      })
-      .eq("id", editingCategoryId));
-  } else {
-    ({ error } = await supabase
-      .from("categories")
-      .insert([
-        {
+    if (editingCategoryId) {
+      ({ error } = await supabase
+        .from("categories")
+        .update({
           name: categoryName,
-          created_by_email: session.user.email,
           updated_by_email: session.user.email,
-        },
-      ]));
-  }
+        })
+        .eq("id", editingCategoryId));
+    } else {
+      ({ error } = await supabase
+        .from("categories")
+        .insert([
+          {
+            name: categoryName,
+            created_by_email: session.user.email,
+            updated_by_email: session.user.email,
+          },
+        ]));
+    }
 
-  if (error) {
-    alert(error.message);
-    return;
-  }
+    if (error) return alert(error.message);
 
-  resetCategoryForm();
-  loadData();
-};
+    resetCategoryForm();
+    loadData();
+  };
+
   const editCategory = (category) => {
     setEditingCategoryId(category.id);
     setCategoryName(category.name || "");
@@ -190,39 +185,36 @@ export default function AdminPage() {
   };
 
   const saveSite = async (e) => {
-  e.preventDefault();
-  let error;
+    e.preventDefault();
+    let error;
 
-  if (editingSiteId) {
-    ({ error } = await supabase
-      .from("sites")
-      .update({
-        name: siteName,
-        developer_id: siteDeveloperId,
-        updated_by_email: session.user.email,
-      })
-      .eq("id", editingSiteId));
-  } else {
-    ({ error } = await supabase
-      .from("sites")
-      .insert([
-        {
+    if (editingSiteId) {
+      ({ error } = await supabase
+        .from("sites")
+        .update({
           name: siteName,
           developer_id: siteDeveloperId,
-          created_by_email: session.user.email,
           updated_by_email: session.user.email,
-        },
-      ]));
-  }
+        })
+        .eq("id", editingSiteId));
+    } else {
+      ({ error } = await supabase
+        .from("sites")
+        .insert([
+          {
+            name: siteName,
+            developer_id: siteDeveloperId,
+            created_by_email: session.user.email,
+            updated_by_email: session.user.email,
+          },
+        ]));
+    }
 
-  if (error) {
-    alert(error.message);
-    return;
-  }
+    if (error) return alert(error.message);
 
-  resetSiteForm();
-  loadData();
-};
+    resetSiteForm();
+    loadData();
+  };
 
   const editSite = (site) => {
     setEditingSiteId(site.id);
@@ -246,46 +238,43 @@ export default function AdminPage() {
   };
 
   const saveSpec = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  let error;
+    let error;
 
-  if (editingSpecId) {
-    ({ error } = await supabase
-      .from("specs")
-      .update({
-        title: specTitle,
-        body: specBody,
-        site_id: specSiteId,
-        category_id: specCategoryId,
-        updated_at: new Date().toISOString().slice(0, 10),
-        updated_by_email: session.user.email,
-      })
-      .eq("id", editingSpecId));
-  } else {
-    ({ error } = await supabase
-      .from("specs")
-      .insert([
-        {
+    if (editingSpecId) {
+      ({ error } = await supabase
+        .from("specs")
+        .update({
           title: specTitle,
           body: specBody,
           site_id: specSiteId,
           category_id: specCategoryId,
           updated_at: new Date().toISOString().slice(0, 10),
-          created_by_email: session.user.email,
           updated_by_email: session.user.email,
-        },
-      ]));
-  }
+        })
+        .eq("id", editingSpecId));
+    } else {
+      ({ error } = await supabase
+        .from("specs")
+        .insert([
+          {
+            title: specTitle,
+            body: specBody,
+            site_id: specSiteId,
+            category_id: specCategoryId,
+            updated_at: new Date().toISOString().slice(0, 10),
+            created_by_email: session.user.email,
+            updated_by_email: session.user.email,
+          },
+        ]));
+    }
 
-  if (error) {
-    alert(error.message);
-    return;
-  }
+    if (error) return alert(error.message);
 
-  resetSpecForm();
-  loadData();
-};
+    resetSpecForm();
+    loadData();
+  };
 
   const editSpec = (spec) => {
     setEditingSpecId(spec.id);
@@ -367,7 +356,10 @@ export default function AdminPage() {
       const url = new URL(image.image_url);
       const marker = "/storage/v1/object/public/spec-images/";
       const index = url.pathname.indexOf(marker);
-      const storagePath = index >= 0 ? decodeURIComponent(url.pathname.slice(index + marker.length)) : null;
+      const storagePath =
+        index >= 0
+          ? decodeURIComponent(url.pathname.slice(index + marker.length))
+          : null;
 
       if (storagePath) {
         await supabase.storage.from("spec-images").remove([storagePath]);
@@ -527,7 +519,9 @@ export default function AdminPage() {
           <select value={imageSpecId} onChange={(e) => setImageSpecId(e.target.value)} style={inputStyle}>
             <option value="">Select Spec</option>
             {specs.map((spec) => (
-              <option key={spec.id} value={spec.id}>{spec.title} - {getSiteName(spec.site_id)}</option>
+              <option key={spec.id} value={spec.id}>
+                {spec.title} - {getSiteName(spec.site_id)}
+              </option>
             ))}
           </select>
           <input
@@ -553,7 +547,15 @@ export default function AdminPage() {
           <div style={{ display: "grid", gap: 12 }}>
             {developers.map((developer) => (
               <div key={developer.id} style={listItemStyle}>
-                <strong>{developer.name}</strong>
+                <div>
+                  <strong>{developer.name}</strong>
+                  <div style={{ color: "#6b7280", marginTop: 4, fontSize: 14 }}>
+                    Added by: {developer.created_by_email || "Unknown"}
+                  </div>
+                  <div style={{ color: "#6b7280", marginTop: 2, fontSize: 14 }}>
+                    Updated by: {developer.updated_by_email || "Unknown"}
+                  </div>
+                </div>
                 <div style={{ display: "flex", gap: 10 }}>
                   <button type="button" onClick={() => editDeveloper(developer)} style={buttonStyle}>Edit</button>
                   <button type="button" onClick={() => deleteDeveloper(developer.id)} style={{ ...buttonStyle, background: "#b91c1c" }}>Delete</button>
@@ -568,7 +570,15 @@ export default function AdminPage() {
           <div style={{ display: "grid", gap: 12 }}>
             {categories.map((category) => (
               <div key={category.id} style={listItemStyle}>
-                <strong>{category.name}</strong>
+                <div>
+                  <strong>{category.name}</strong>
+                  <div style={{ color: "#6b7280", marginTop: 4, fontSize: 14 }}>
+                    Added by: {category.created_by_email || "Unknown"}
+                  </div>
+                  <div style={{ color: "#6b7280", marginTop: 2, fontSize: 14 }}>
+                    Updated by: {category.updated_by_email || "Unknown"}
+                  </div>
+                </div>
                 <div style={{ display: "flex", gap: 10 }}>
                   <button type="button" onClick={() => editCategory(category)} style={buttonStyle}>Edit</button>
                   <button type="button" onClick={() => deleteCategory(category.id)} style={{ ...buttonStyle, background: "#b91c1c" }}>Delete</button>
@@ -587,6 +597,12 @@ export default function AdminPage() {
                   <strong>{site.name}</strong>
                   <div style={{ color: "#6b7280", marginTop: 4 }}>
                     Developer: {getDeveloperName(site.developer_id)}
+                  </div>
+                  <div style={{ color: "#6b7280", marginTop: 4, fontSize: 14 }}>
+                    Added by: {site.created_by_email || "Unknown"}
+                  </div>
+                  <div style={{ color: "#6b7280", marginTop: 2, fontSize: 14 }}>
+                    Updated by: {site.updated_by_email || "Unknown"}
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>
@@ -607,8 +623,14 @@ export default function AdminPage() {
                 <p style={{ margin: "0 0 6px", color: "#6b7280" }}>
                   <strong>Site:</strong> {getSiteName(spec.site_id)}
                 </p>
-                <p style={{ margin: "0 0 12px", color: "#6b7280" }}>
+                <p style={{ margin: "0 0 6px", color: "#6b7280" }}>
                   <strong>Category:</strong> {getCategoryName(spec.category_id)}
+                </p>
+                <p style={{ margin: "0 0 6px", color: "#6b7280" }}>
+                  <strong>Added by:</strong> {spec.created_by_email || "Unknown"}
+                </p>
+                <p style={{ margin: "0 0 12px", color: "#6b7280" }}>
+                  <strong>Updated by:</strong> {spec.updated_by_email || "Unknown"}
                 </p>
                 <pre style={{ whiteSpace: "pre-wrap", fontFamily: "Arial, sans-serif", margin: 0 }}>
                   {spec.body}
@@ -623,7 +645,17 @@ export default function AdminPage() {
                           <img
                             src={image.image_url}
                             alt={image.caption || spec.title}
-                            style={{ width: "100%", height: 140, objectFit: "cover", borderRadius: 8, display: "block" }}
+                            style={{
+                              width: "100%",
+                              maxHeight: 180,
+                              objectFit: "contain",
+                              borderRadius: 8,
+                              display: "block",
+                              background: "#f9fafb",
+                              padding: 6,
+                              border: "1px solid #e5e7eb",
+                              boxSizing: "border-box",
+                            }}
                           />
                           {image.caption && (
                             <p style={{ margin: "8px 0 0", fontSize: 13, color: "#6b7280" }}>{image.caption}</p>
