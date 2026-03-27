@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "../lib/supabaseClient";
 
 export default function AdminPage() {
@@ -523,12 +524,26 @@ export default function AdminPage() {
             justifyContent: "space-between",
             alignItems: "center",
             marginBottom: 24,
+            flexWrap: "wrap",
+            gap: 10,
           }}
         >
           <h1 style={{ margin: 0 }}>Admin Panel</h1>
-          <button onClick={signOut} style={buttonStyle}>
-            Sign Out
-          </button>
+
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <Link href="/" style={{ textDecoration: "none" }}>
+              <button
+                type="button"
+                style={{ ...buttonStyle, background: "#0f766e" }}
+              >
+                Return To Spec Hub
+              </button>
+            </Link>
+
+            <button onClick={signOut} style={buttonStyle}>
+              Sign Out
+            </button>
+          </div>
         </div>
 
         <div
