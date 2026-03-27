@@ -170,7 +170,7 @@ export default function Home() {
               />
 
               <div>
-                <h1 style={{ margin: 0 }}>RW Derbyshire Spec Hub</h1>
+                <h1 style={{ margin: 0 }}>RWD Spec Hub</h1>
                 <p style={{ margin: 0, color: "#6b7280", fontSize: 14 }}>
                   Electrical installation specifications
                 </p>
