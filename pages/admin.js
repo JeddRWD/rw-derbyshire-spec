@@ -87,23 +87,37 @@ export default function AdminPage() {
   };
 
   const saveDeveloper = async (e) => {
-    e.preventDefault();
-    let error;
+  e.preventDefault();
+  let error;
 
-    if (editingDeveloperId) {
-      ({ error } = await supabase
-        .from("developers")
-        .update({ name: developerName })
-        .eq("id", editingDeveloperId));
-    } else {
-      ({ error } = await supabase.from("developers").insert([{ name: developerName }]));
-    }
+  if (editingDeveloperId) {
+    ({ error } = await supabase
+      .from("developers")
+      .update({
+        name: developerName,
+        updated_by_email: session.user.email,
+      })
+      .eq("id", editingDeveloperId));
+  } else {
+    ({ error } = await supabase
+      .from("developers")
+      .insert([
+        {
+          name: developerName,
+          created_by_email: session.user.email,
+          updated_by_email: session.user.email,
+        },
+      ]));
+  }
 
-    if (error) return alert(error.message);
+  if (error) {
+    alert(error.message);
+    return;
+  }
 
-    resetDeveloperForm();
-    loadData();
-  };
+  resetDeveloperForm();
+  loadData();
+};
 
   const editDeveloper = (developer) => {
     setEditingDeveloperId(developer.id);
@@ -125,24 +139,37 @@ export default function AdminPage() {
   };
 
   const saveCategory = async (e) => {
-    e.preventDefault();
-    let error;
+  e.preventDefault();
+  let error;
 
-    if (editingCategoryId) {
-      ({ error } = await supabase
-        .from("categories")
-        .update({ name: categoryName })
-        .eq("id", editingCategoryId));
-    } else {
-      ({ error } = await supabase.from("categories").insert([{ name: categoryName }]));
-    }
+  if (editingCategoryId) {
+    ({ error } = await supabase
+      .from("categories")
+      .update({
+        name: categoryName,
+        updated_by_email: session.user.email,
+      })
+      .eq("id", editingCategoryId));
+  } else {
+    ({ error } = await supabase
+      .from("categories")
+      .insert([
+        {
+          name: categoryName,
+          created_by_email: session.user.email,
+          updated_by_email: session.user.email,
+        },
+      ]));
+  }
 
-    if (error) return alert(error.message);
+  if (error) {
+    alert(error.message);
+    return;
+  }
 
-    resetCategoryForm();
-    loadData();
-  };
-
+  resetCategoryForm();
+  loadData();
+};
   const editCategory = (category) => {
     setEditingCategoryId(category.id);
     setCategoryName(category.name || "");
@@ -163,21 +190,39 @@ export default function AdminPage() {
   };
 
   const saveSite = async (e) => {
-    e.preventDefault();
-    const payload = { name: siteName, developer_id: siteDeveloperId };
-    let error;
+  e.preventDefault();
+  let error;
 
-    if (editingSiteId) {
-      ({ error } = await supabase.from("sites").update(payload).eq("id", editingSiteId));
-    } else {
-      ({ error } = await supabase.from("sites").insert([payload]));
-    }
+  if (editingSiteId) {
+    ({ error } = await supabase
+      .from("sites")
+      .update({
+        name: siteName,
+        developer_id: siteDeveloperId,
+        updated_by_email: session.user.email,
+      })
+      .eq("id", editingSiteId));
+  } else {
+    ({ error } = await supabase
+      .from("sites")
+      .insert([
+        {
+          name: siteName,
+          developer_id: siteDeveloperId,
+          created_by_email: session.user.email,
+          updated_by_email: session.user.email,
+        },
+      ]));
+  }
 
-    if (error) return alert(error.message);
+  if (error) {
+    alert(error.message);
+    return;
+  }
 
-    resetSiteForm();
-    loadData();
-  };
+  resetSiteForm();
+  loadData();
+};
 
   const editSite = (site) => {
     setEditingSiteId(site.id);
@@ -201,29 +246,46 @@ export default function AdminPage() {
   };
 
   const saveSpec = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const payload = {
-      title: specTitle,
-      body: specBody,
-      site_id: specSiteId,
-      category_id: specCategoryId,
-      updated_at: new Date().toISOString().slice(0, 10),
-    };
+  let error;
 
-    let error;
+  if (editingSpecId) {
+    ({ error } = await supabase
+      .from("specs")
+      .update({
+        title: specTitle,
+        body: specBody,
+        site_id: specSiteId,
+        category_id: specCategoryId,
+        updated_at: new Date().toISOString().slice(0, 10),
+        updated_by_email: session.user.email,
+      })
+      .eq("id", editingSpecId));
+  } else {
+    ({ error } = await supabase
+      .from("specs")
+      .insert([
+        {
+          title: specTitle,
+          body: specBody,
+          site_id: specSiteId,
+          category_id: specCategoryId,
+          updated_at: new Date().toISOString().slice(0, 10),
+          created_by_email: session.user.email,
+          updated_by_email: session.user.email,
+        },
+      ]));
+  }
 
-    if (editingSpecId) {
-      ({ error } = await supabase.from("specs").update(payload).eq("id", editingSpecId));
-    } else {
-      ({ error } = await supabase.from("specs").insert([payload]));
-    }
+  if (error) {
+    alert(error.message);
+    return;
+  }
 
-    if (error) return alert(error.message);
-
-    resetSpecForm();
-    loadData();
-  };
+  resetSpecForm();
+  loadData();
+};
 
   const editSpec = (spec) => {
     setEditingSpecId(spec.id);
