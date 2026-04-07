@@ -165,8 +165,8 @@ export default function Home() {
               <Image
                 src="/logo.jpg"
                 alt="RW Derbyshire Electrical"
-                width={200}
-                height={100}
+                width={250}
+                height={150}
               />
 
               <div>
