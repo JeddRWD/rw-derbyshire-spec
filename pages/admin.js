@@ -549,6 +549,7 @@ const saveFireCollar = async (e) => {
 
 const editFireCollar = (item) => {
   setEditingFireCollarId(item.id);
+  setFireCollarDeveloperId(item.developer_id || "");
   setFireCollarSiteId(item.site_id || "");
   setFireCollarHouseType(item.house_type || "");
   setFireCollarCount(item.collar_count || "");
@@ -571,6 +572,7 @@ const deleteFireCollar = async (id) => {
 
 const resetFireCollarForm = () => {
   setEditingFireCollarId(null);
+  setFireCollarDeveloperId("");
   setFireCollarSiteId("");
   setFireCollarHouseType("");
   setFireCollarCount("");
