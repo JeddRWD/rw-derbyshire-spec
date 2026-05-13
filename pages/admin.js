@@ -48,6 +48,12 @@ export default function AdminPage() {
   const [showCategories, setShowCategories] = useState(false);
   const [showSites, setShowSites] = useState(false);
   const [showSpecs, setShowSpecs] = useState(true);
+const [fireCollars, setFireCollars] = useState([]);
+const [fireCollarSiteId, setFireCollarSiteId] = useState("");
+const [fireCollarHouseType, setFireCollarHouseType] = useState("");
+const [fireCollarCount, setFireCollarCount] = useState("");
+const [editingFireCollarId, setEditingFireCollarId] = useState(null);
+const [showFireCollars, setShowFireCollars] = useState(false);
 
   const [lightboxImage, setLightboxImage] = useState(null);
 
@@ -99,11 +105,17 @@ export default function AdminPage() {
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
 
+const { data: collars } = await supabase
+  .from("fire_collar_requirements")
+  .select("*")
+  .order("house_type");
+
     setDevelopers(devs || []);
     setCategories(cats || []);
     setSites(sts || []);
     setSpecs(spc || []);
     setSpecImages(imgs || []);
+setFireCollars(collars || []);
   };
 
   const signIn = async (e) => {
@@ -491,7 +503,77 @@ export default function AdminPage() {
       alert(error.message || "Delete failed");
     }
   };
+const saveFireCollar = async (e) => {
+  e.preventDefault();
 
+  if (!fireCollarSiteId || !fireCollarHouseType || fireCollarCount === "") {
+    return alert("Please complete site, house type and collar count.");
+  }
+
+  const selectedSite = sites.find(
+    (site) => String(site.id) === String(fireCollarSiteId)
+  );
+
+  if (!selectedSite) return alert("Selected site not found.");
+
+  const payload = {
+    site_id: fireCollarSiteId,
+    developer_id: selectedSite.developer_id,
+    house_type: fireCollarHouseType.trim(),
+    collar_count: Number(fireCollarCount),
+    updated_by_email: session.user.email,
+  };
+
+  let error;
+
+  if (editingFireCollarId) {
+    ({ error } = await supabase
+      .from("fire_collar_requirements")
+      .update(payload)
+      .eq("id", editingFireCollarId));
+  } else {
+    ({ error } = await supabase.from("fire_collar_requirements").insert([
+      {
+        ...payload,
+        created_by_email: session.user.email,
+      },
+    ]));
+  }
+
+  if (error) return alert(error.message);
+
+  resetFireCollarForm();
+  loadData();
+};
+
+const editFireCollar = (item) => {
+  setEditingFireCollarId(item.id);
+  setFireCollarSiteId(item.site_id || "");
+  setFireCollarHouseType(item.house_type || "");
+  setFireCollarCount(item.collar_count || "");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+const deleteFireCollar = async (id) => {
+  if (!window.confirm("Delete this fire collar requirement?")) return;
+
+  const { error } = await supabase
+    .from("fire_collar_requirements")
+    .delete()
+    .eq("id", id);
+
+  if (error) return alert(error.message);
+
+  if (editingFireCollarId === id) resetFireCollarForm();
+  loadData();
+};
+
+const resetFireCollarForm = () => {
+  setEditingFireCollarId(null);
+  setFireCollarSiteId("");
+  setFireCollarHouseType("");
+  setFireCollarCount("");
+};
   const getSiteName = (id) =>
     sites.find((site) => String(site.id) === String(id))?.name || "";
 
@@ -1045,7 +1127,116 @@ export default function AdminPage() {
               </div>
             )}
           </div>
+<div style={{ ...cardStyle, marginBottom: 20 }}>
+  <button
+    type="button"
+    onClick={() => setShowFireCollars(!showFireCollars)}
+    style={sectionToggleStyle}
+  >
+    <span>Fire Collar Requirements</span>
+    <span>{showFireCollars ? "▲" : "▼"}</span>
+  </button>
 
+  {showFireCollars && (
+    <div style={{ marginTop: 16 }}>
+      <form onSubmit={saveFireCollar} style={{ marginBottom: 20 }}>
+        <h2>
+          {editingFireCollarId
+            ? "Edit Fire Collar Requirement"
+            : "Add Fire Collar Requirement"}
+        </h2>
+
+        <select
+          value={fireCollarSiteId}
+          onChange={(e) => setFireCollarSiteId(e.target.value)}
+          style={inputStyle}
+        >
+          <option value="">Select Site</option>
+          {sites.map((site) => (
+            <option key={site.id} value={site.id}>
+              {site.name} - {getDeveloperName(site.developer_id)}
+            </option>
+          ))}
+        </select>
+
+        <input
+          value={fireCollarHouseType}
+          onChange={(e) => setFireCollarHouseType(e.target.value)}
+          placeholder="House type"
+          style={inputStyle}
+        />
+
+        <input
+          value={fireCollarCount}
+          onChange={(e) => setFireCollarCount(e.target.value)}
+          type="number"
+          min="0"
+          placeholder="Number of fire collars required"
+          style={inputStyle}
+        />
+
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button type="submit" style={buttonStyle}>
+            {editingFireCollarId ? "Update Requirement" : "Save Requirement"}
+          </button>
+
+          {editingFireCollarId && (
+            <button
+              type="button"
+              onClick={resetFireCollarForm}
+              style={{ ...buttonStyle, background: "#6b7280" }}
+            >
+              Cancel Edit
+            </button>
+          )}
+        </div>
+      </form>
+
+      <div style={{ display: "grid", gap: 12 }}>
+        {fireCollars.length === 0 ? (
+          <p style={{ color: "#6b7280", margin: 0 }}>
+            No fire collar requirements added yet.
+          </p>
+        ) : (
+          fireCollars.map((item) => (
+            <div key={item.id} style={listItemStyle}>
+              <div>
+                <strong>{item.house_type}</strong>
+                <div style={{ color: "#6b7280", marginTop: 4 }}>
+                  Site: {getSiteName(item.site_id)}
+                </div>
+                <div style={{ color: "#6b7280", marginTop: 4 }}>
+                  Developer: {getDeveloperName(item.developer_id)}
+                </div>
+                <div style={{ color: "#6b7280", marginTop: 4 }}>
+                  Fire collars: {item.collar_count}
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={() => editFireCollar(item)}
+                  style={buttonStyle}
+                >
+                  Edit
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => deleteFireCollar(item.id)}
+                  style={{ ...buttonStyle, background: "#b91c1c" }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  )}
+</div>
           <div style={cardStyle}>
             <button
               type="button"
