@@ -1147,17 +1147,41 @@ const resetFireCollarForm = () => {
         </h2>
 
         <select
-          value={fireCollarSiteId}
-          onChange={(e) => setFireCollarSiteId(e.target.value)}
-          style={inputStyle}
-        >
-          <option value="">Select Site</option>
-          {sites.map((site) => (
-            <option key={site.id} value={site.id}>
-              {site.name} - {getDeveloperName(site.developer_id)}
-            </option>
-          ))}
-        </select>
+  value={selectedDeveloperId}
+  onChange={(e) => {
+    setSelectedDeveloperId(e.target.value);
+    setFireCollarSiteId("");
+  }}
+  style={inputStyle}
+>
+  <option value="">Select Developer</option>
+
+  {developers.map((developer) => (
+    <option key={developer.id} value={developer.id}>
+      {developer.name}
+    </option>
+  ))}
+</select>
+
+<select
+  value={fireCollarSiteId}
+  onChange={(e) => setFireCollarSiteId(e.target.value)}
+  style={inputStyle}
+>
+  <option value="">Select Site</option>
+
+  {sites
+    .filter(
+      (site) =>
+        !selectedDeveloperId ||
+        String(site.developer_id) === String(selectedDeveloperId)
+    )
+    .map((site) => (
+      <option key={site.id} value={site.id}>
+        {site.name}
+      </option>
+    ))}
+</select>
 
         <input
           value={fireCollarHouseType}
