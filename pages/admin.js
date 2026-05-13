@@ -13,6 +13,7 @@ export default function AdminPage() {
   const [sites, setSites] = useState([]);
   const [specs, setSpecs] = useState([]);
   const [specImages, setSpecImages] = useState([]);
+  const [fireCollars, setFireCollars] = useState([]);
 
   const [developerName, setDeveloperName] = useState("");
   const [editingDeveloperId, setEditingDeveloperId] = useState(null);
@@ -44,17 +45,17 @@ export default function AdminPage() {
   const [specFilterSiteId, setSpecFilterSiteId] = useState("");
   const [specFilterCategoryId, setSpecFilterCategoryId] = useState("");
 
+  const [fireCollarDeveloperId, setFireCollarDeveloperId] = useState("");
+  const [fireCollarSiteId, setFireCollarSiteId] = useState("");
+  const [fireCollarHouseType, setFireCollarHouseType] = useState("");
+  const [fireCollarCount, setFireCollarCount] = useState("");
+  const [editingFireCollarId, setEditingFireCollarId] = useState(null);
+
   const [showDevelopers, setShowDevelopers] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
   const [showSites, setShowSites] = useState(false);
+  const [showFireCollars, setShowFireCollars] = useState(false);
   const [showSpecs, setShowSpecs] = useState(true);
-const [fireCollars, setFireCollars] = useState([]);
-const [fireCollarSiteId, setFireCollarSiteId] = useState("");
-const [fireCollarHouseType, setFireCollarHouseType] = useState("");
-const [fireCollarCount, setFireCollarCount] = useState("");
-const [editingFireCollarId, setEditingFireCollarId] = useState(null);
-const [showFireCollars, setShowFireCollars] = useState(false);
-  const [fireCollarDeveloperId, setFireCollarDeveloperId] = useState("");
 
   const [lightboxImage, setLightboxImage] = useState(null);
 
@@ -106,25 +107,27 @@ const [showFireCollars, setShowFireCollars] = useState(false);
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
 
-const { data: collars } = await supabase
-  .from("fire_collar_requirements")
-  .select("*")
-  .order("house_type");
+    const { data: collars } = await supabase
+      .from("fire_collar_requirements")
+      .select("*")
+      .order("house_type");
 
     setDevelopers(devs || []);
     setCategories(cats || []);
     setSites(sts || []);
     setSpecs(spc || []);
     setSpecImages(imgs || []);
-setFireCollars(collars || []);
+    setFireCollars(collars || []);
   };
 
   const signIn = async (e) => {
     e.preventDefault();
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+
     if (error) alert(error.message);
   };
 
@@ -134,26 +137,27 @@ setFireCollars(collars || []);
 
   const saveDeveloper = async (e) => {
     e.preventDefault();
+
+    if (!developerName.trim()) return alert("Please enter a developer name.");
+
     let error;
 
     if (editingDeveloperId) {
       ({ error } = await supabase
         .from("developers")
         .update({
-          name: developerName,
+          name: developerName.trim(),
           updated_by_email: session.user.email,
         })
         .eq("id", editingDeveloperId));
     } else {
-      ({ error } = await supabase
-        .from("developers")
-        .insert([
-          {
-            name: developerName,
-            created_by_email: session.user.email,
-            updated_by_email: session.user.email,
-          },
-        ]));
+      ({ error } = await supabase.from("developers").insert([
+        {
+          name: developerName.trim(),
+          created_by_email: session.user.email,
+          updated_by_email: session.user.email,
+        },
+      ]));
     }
 
     if (error) return alert(error.message);
@@ -170,8 +174,11 @@ setFireCollars(collars || []);
 
   const deleteDeveloper = async (id) => {
     if (!window.confirm("Delete this developer?")) return;
+
     const { error } = await supabase.from("developers").delete().eq("id", id);
+
     if (error) return alert(error.message);
+
     if (editingDeveloperId === id) resetDeveloperForm();
     loadData();
   };
@@ -183,26 +190,27 @@ setFireCollars(collars || []);
 
   const saveCategory = async (e) => {
     e.preventDefault();
+
+    if (!categoryName.trim()) return alert("Please enter a category name.");
+
     let error;
 
     if (editingCategoryId) {
       ({ error } = await supabase
         .from("categories")
         .update({
-          name: categoryName,
+          name: categoryName.trim(),
           updated_by_email: session.user.email,
         })
         .eq("id", editingCategoryId));
     } else {
-      ({ error } = await supabase
-        .from("categories")
-        .insert([
-          {
-            name: categoryName,
-            created_by_email: session.user.email,
-            updated_by_email: session.user.email,
-          },
-        ]));
+      ({ error } = await supabase.from("categories").insert([
+        {
+          name: categoryName.trim(),
+          created_by_email: session.user.email,
+          updated_by_email: session.user.email,
+        },
+      ]));
     }
 
     if (error) return alert(error.message);
@@ -219,8 +227,11 @@ setFireCollars(collars || []);
 
   const deleteCategory = async (id) => {
     if (!window.confirm("Delete this category?")) return;
+
     const { error } = await supabase.from("categories").delete().eq("id", id);
+
     if (error) return alert(error.message);
+
     if (editingCategoryId === id) resetCategoryForm();
     loadData();
   };
@@ -232,28 +243,31 @@ setFireCollars(collars || []);
 
   const saveSite = async (e) => {
     e.preventDefault();
+
+    if (!siteName.trim() || !siteDeveloperId) {
+      return alert("Please complete site name and developer.");
+    }
+
     let error;
 
     if (editingSiteId) {
       ({ error } = await supabase
         .from("sites")
         .update({
-          name: siteName,
+          name: siteName.trim(),
           developer_id: siteDeveloperId,
           updated_by_email: session.user.email,
         })
         .eq("id", editingSiteId));
     } else {
-      ({ error } = await supabase
-        .from("sites")
-        .insert([
-          {
-            name: siteName,
-            developer_id: siteDeveloperId,
-            created_by_email: session.user.email,
-            updated_by_email: session.user.email,
-          },
-        ]));
+      ({ error } = await supabase.from("sites").insert([
+        {
+          name: siteName.trim(),
+          developer_id: siteDeveloperId,
+          created_by_email: session.user.email,
+          updated_by_email: session.user.email,
+        },
+      ]));
     }
 
     if (error) return alert(error.message);
@@ -271,8 +285,11 @@ setFireCollars(collars || []);
 
   const deleteSite = async (id) => {
     if (!window.confirm("Delete this site?")) return;
+
     const { error } = await supabase.from("sites").delete().eq("id", id);
+
     if (error) return alert(error.message);
+
     if (editingSiteId === id) resetSiteForm();
     loadData();
   };
@@ -286,13 +303,17 @@ setFireCollars(collars || []);
   const saveSpec = async (e) => {
     e.preventDefault();
 
+    if (!specTitle.trim() || !specBody.trim() || !specSiteId || !specCategoryId) {
+      return alert("Please complete all spec fields.");
+    }
+
     let error;
 
     if (editingSpecId) {
       ({ error } = await supabase
         .from("specs")
         .update({
-          title: specTitle,
+          title: specTitle.trim(),
           body: specBody,
           site_id: specSiteId,
           category_id: specCategoryId,
@@ -301,19 +322,17 @@ setFireCollars(collars || []);
         })
         .eq("id", editingSpecId));
     } else {
-      ({ error } = await supabase
-        .from("specs")
-        .insert([
-          {
-            title: specTitle,
-            body: specBody,
-            site_id: specSiteId,
-            category_id: specCategoryId,
-            updated_at: new Date().toISOString().slice(0, 10),
-            created_by_email: session.user.email,
-            updated_by_email: session.user.email,
-          },
-        ]));
+      ({ error } = await supabase.from("specs").insert([
+        {
+          title: specTitle.trim(),
+          body: specBody,
+          site_id: specSiteId,
+          category_id: specCategoryId,
+          updated_at: new Date().toISOString().slice(0, 10),
+          created_by_email: session.user.email,
+          updated_by_email: session.user.email,
+        },
+      ]));
     }
 
     if (error) return alert(error.message);
@@ -334,8 +353,11 @@ setFireCollars(collars || []);
 
   const deleteSpec = async (id) => {
     if (!window.confirm("Delete this spec?")) return;
+
     const { error } = await supabase.from("specs").delete().eq("id", id);
+
     if (error) return alert(error.message);
+
     if (editingSpecId === id) resetSpecForm();
     loadData();
   };
@@ -346,6 +368,80 @@ setFireCollars(collars || []);
     setSpecBody("");
     setSpecSiteId("");
     setSpecCategoryId("");
+  };
+
+  const saveFireCollar = async (e) => {
+    e.preventDefault();
+
+    if (!fireCollarDeveloperId || !fireCollarSiteId || !fireCollarHouseType.trim() || fireCollarCount === "") {
+      return alert("Please complete developer, site, house type and collar count.");
+    }
+
+    const selectedSite = sites.find(
+      (site) => String(site.id) === String(fireCollarSiteId)
+    );
+
+    if (!selectedSite) return alert("Selected site not found.");
+
+    const payload = {
+      site_id: fireCollarSiteId,
+      developer_id: selectedSite.developer_id,
+      house_type: fireCollarHouseType.trim(),
+      collar_count: Number(fireCollarCount),
+      updated_by_email: session.user.email,
+    };
+
+    let error;
+
+    if (editingFireCollarId) {
+      ({ error } = await supabase
+        .from("fire_collar_requirements")
+        .update(payload)
+        .eq("id", editingFireCollarId));
+    } else {
+      ({ error } = await supabase.from("fire_collar_requirements").insert([
+        {
+          ...payload,
+          created_by_email: session.user.email,
+        },
+      ]));
+    }
+
+    if (error) return alert(error.message);
+
+    resetFireCollarForm();
+    loadData();
+  };
+
+  const editFireCollar = (item) => {
+    setEditingFireCollarId(item.id);
+    setFireCollarDeveloperId(item.developer_id || "");
+    setFireCollarSiteId(item.site_id || "");
+    setFireCollarHouseType(item.house_type || "");
+    setFireCollarCount(item.collar_count || "");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const deleteFireCollar = async (id) => {
+    if (!window.confirm("Delete this fire collar requirement?")) return;
+
+    const { error } = await supabase
+      .from("fire_collar_requirements")
+      .delete()
+      .eq("id", id);
+
+    if (error) return alert(error.message);
+
+    if (editingFireCollarId === id) resetFireCollarForm();
+    loadData();
+  };
+
+  const resetFireCollarForm = () => {
+    setEditingFireCollarId(null);
+    setFireCollarDeveloperId("");
+    setFireCollarSiteId("");
+    setFireCollarHouseType("");
+    setFireCollarCount("");
   };
 
   const startCopySpec = (spec) => {
@@ -366,6 +462,7 @@ setFireCollars(collars || []);
     e.preventDefault();
 
     if (!copyingSpec) return;
+
     if (copySiteIds.length === 0) {
       return alert("Please select at least one site to copy to.");
     }
@@ -464,6 +561,7 @@ setFireCollars(collars || []);
 
       setImageFile(null);
       setImageCaption("");
+
       const fileInput = document.getElementById("spec-image-upload");
       if (fileInput) fileInput.value = "";
 
@@ -504,79 +602,7 @@ setFireCollars(collars || []);
       alert(error.message || "Delete failed");
     }
   };
-const saveFireCollar = async (e) => {
-  e.preventDefault();
 
-  if (!fireCollarSiteId || !fireCollarHouseType || fireCollarCount === "") {
-    return alert("Please complete site, house type and collar count.");
-  }
-
-  const selectedSite = sites.find(
-    (site) => String(site.id) === String(fireCollarSiteId)
-  );
-
-  if (!selectedSite) return alert("Selected site not found.");
-
-  const payload = {
-    site_id: fireCollarSiteId,
-    developer_id: selectedSite.developer_id,
-    house_type: fireCollarHouseType.trim(),
-    collar_count: Number(fireCollarCount),
-    updated_by_email: session.user.email,
-  };
-
-  let error;
-
-  if (editingFireCollarId) {
-    ({ error } = await supabase
-      .from("fire_collar_requirements")
-      .update(payload)
-      .eq("id", editingFireCollarId));
-  } else {
-    ({ error } = await supabase.from("fire_collar_requirements").insert([
-      {
-        ...payload,
-        created_by_email: session.user.email,
-      },
-    ]));
-  }
-
-  if (error) return alert(error.message);
-
-  resetFireCollarForm();
-  loadData();
-};
-
-const editFireCollar = (item) => {
-  setEditingFireCollarId(item.id);
-  setFireCollarDeveloperId(item.developer_id || "");
-  setFireCollarSiteId(item.site_id || "");
-  setFireCollarHouseType(item.house_type || "");
-  setFireCollarCount(item.collar_count || "");
-  window.scrollTo({ top: 0, behavior: "smooth" });
-};
-
-const deleteFireCollar = async (id) => {
-  if (!window.confirm("Delete this fire collar requirement?")) return;
-
-  const { error } = await supabase
-    .from("fire_collar_requirements")
-    .delete()
-    .eq("id", id);
-
-  if (error) return alert(error.message);
-
-  if (editingFireCollarId === id) resetFireCollarForm();
-  loadData();
-};
-
-const resetFireCollarForm = () => {
-  setEditingFireCollarId(null);
-  setFireCollarDeveloperId("");
-  setFireCollarSiteId("");
-  setFireCollarHouseType("");
-  setFireCollarCount("");
-};
   const getSiteName = (id) =>
     sites.find((site) => String(site.id) === String(id))?.name || "";
 
@@ -603,6 +629,12 @@ const resetFireCollarForm = () => {
     });
   }, [specs, specFilterSiteId, specFilterCategoryId]);
 
+  const filteredFireCollarSites = sites.filter((site) =>
+    fireCollarDeveloperId
+      ? String(site.developer_id) === String(fireCollarDeveloperId)
+      : true
+  );
+
   const availableCopySites = copyingSpec
     ? sites.filter((site) => String(site.id) !== String(copyingSpec.site_id))
     : [];
@@ -628,6 +660,7 @@ const resetFireCollarForm = () => {
           }}
         >
           <h1 style={{ marginTop: 0 }}>Admin Login</h1>
+
           <input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -635,6 +668,7 @@ const resetFireCollarForm = () => {
             placeholder="Email"
             style={{ width: "100%", padding: 12, marginBottom: 12 }}
           />
+
           <input
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -642,6 +676,7 @@ const resetFireCollarForm = () => {
             placeholder="Password"
             style={{ width: "100%", padding: 12, marginBottom: 12 }}
           />
+
           <button
             type="submit"
             style={{
@@ -686,6 +721,15 @@ const resetFireCollarForm = () => {
                 </button>
               </Link>
 
+              <Link href="/fire-collars" style={{ textDecoration: "none" }}>
+                <button
+                  type="button"
+                  style={{ ...buttonStyle, background: "#475569" }}
+                >
+                  Fire Collars
+                </button>
+              </Link>
+
               <button onClick={signOut} style={buttonStyle}>
                 Sign Out
               </button>
@@ -702,16 +746,19 @@ const resetFireCollarForm = () => {
           >
             <form onSubmit={saveDeveloper} style={cardStyle}>
               <h2>{editingDeveloperId ? "Edit Developer" : "Add Developer"}</h2>
+
               <input
                 value={developerName}
                 onChange={(e) => setDeveloperName(e.target.value)}
                 placeholder="Developer name"
                 style={inputStyle}
               />
+
               <div style={{ display: "flex", gap: 10 }}>
                 <button type="submit" style={buttonStyle}>
                   {editingDeveloperId ? "Update Developer" : "Save Developer"}
                 </button>
+
                 {editingDeveloperId && (
                   <button
                     type="button"
@@ -726,16 +773,19 @@ const resetFireCollarForm = () => {
 
             <form onSubmit={saveCategory} style={cardStyle}>
               <h2>{editingCategoryId ? "Edit Category" : "Add Category"}</h2>
+
               <input
                 value={categoryName}
                 onChange={(e) => setCategoryName(e.target.value)}
                 placeholder="Category name"
                 style={inputStyle}
               />
+
               <div style={{ display: "flex", gap: 10 }}>
                 <button type="submit" style={buttonStyle}>
                   {editingCategoryId ? "Update Category" : "Save Category"}
                 </button>
+
                 {editingCategoryId && (
                   <button
                     type="button"
@@ -751,28 +801,33 @@ const resetFireCollarForm = () => {
 
           <form onSubmit={saveSite} style={{ ...cardStyle, marginBottom: 20 }}>
             <h2>{editingSiteId ? "Edit Site" : "Add Site"}</h2>
+
             <input
               value={siteName}
               onChange={(e) => setSiteName(e.target.value)}
               placeholder="Site name"
               style={inputStyle}
             />
+
             <select
               value={siteDeveloperId}
               onChange={(e) => setSiteDeveloperId(e.target.value)}
               style={inputStyle}
             >
               <option value="">Select Developer</option>
+
               {developers.map((developer) => (
                 <option key={developer.id} value={developer.id}>
                   {developer.name}
                 </option>
               ))}
             </select>
+
             <div style={{ display: "flex", gap: 10 }}>
               <button type="submit" style={buttonStyle}>
                 {editingSiteId ? "Update Site" : "Save Site"}
               </button>
+
               {editingSiteId && (
                 <button
                   type="button"
@@ -787,36 +842,42 @@ const resetFireCollarForm = () => {
 
           <form onSubmit={saveSpec} style={{ ...cardStyle, marginBottom: 20 }}>
             <h2>{editingSpecId ? "Edit Spec" : "Add Spec"}</h2>
+
             <input
               value={specTitle}
               onChange={(e) => setSpecTitle(e.target.value)}
               placeholder="Spec title"
               style={inputStyle}
             />
+
             <select
               value={specSiteId}
               onChange={(e) => setSpecSiteId(e.target.value)}
               style={inputStyle}
             >
               <option value="">Select Site</option>
+
               {sites.map((site) => (
                 <option key={site.id} value={site.id}>
                   {site.name}
                 </option>
               ))}
             </select>
+
             <select
               value={specCategoryId}
               onChange={(e) => setSpecCategoryId(e.target.value)}
               style={inputStyle}
             >
               <option value="">Select Category</option>
+
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
                 </option>
               ))}
             </select>
+
             <textarea
               value={specBody}
               onChange={(e) => setSpecBody(e.target.value)}
@@ -824,10 +885,12 @@ const resetFireCollarForm = () => {
               rows={8}
               style={{ ...inputStyle, resize: "vertical" }}
             />
+
             <div style={{ display: "flex", gap: 10 }}>
               <button type="submit" style={buttonStyle}>
                 {editingSpecId ? "Update Spec" : "Save Spec"}
               </button>
+
               {editingSpecId && (
                 <button
                   type="button"
@@ -841,7 +904,10 @@ const resetFireCollarForm = () => {
           </form>
 
           {copyingSpec && (
-            <form onSubmit={copySpecToSites} style={{ ...cardStyle, marginBottom: 20 }}>
+            <form
+              onSubmit={copySpecToSites}
+              style={{ ...cardStyle, marginBottom: 20 }}
+            >
               <h2>Copy Spec to Multiple Sites</h2>
 
               <p style={{ marginTop: 0, color: "#6b7280" }}>
@@ -933,6 +999,7 @@ const resetFireCollarForm = () => {
               style={inputStyle}
             >
               <option value="">Source Site</option>
+
               {sites.map((site) => (
                 <option key={site.id} value={site.id}>
                   {site.name}
@@ -946,6 +1013,7 @@ const resetFireCollarForm = () => {
               style={inputStyle}
             >
               <option value="">Target Site</option>
+
               {sites.map((site) => (
                 <option key={site.id} value={site.id}>
                   {site.name}
@@ -961,20 +1029,26 @@ const resetFireCollarForm = () => {
             </button>
           </form>
 
-          <form onSubmit={uploadSpecImage} style={{ ...cardStyle, marginBottom: 20 }}>
+          <form
+            onSubmit={uploadSpecImage}
+            style={{ ...cardStyle, marginBottom: 20 }}
+          >
             <h2>Upload Image to Spec</h2>
+
             <select
               value={imageSpecId}
               onChange={(e) => setImageSpecId(e.target.value)}
               style={inputStyle}
             >
               <option value="">Select Spec</option>
+
               {specs.map((spec) => (
                 <option key={spec.id} value={spec.id}>
                   {spec.title} - {getSiteName(spec.site_id)}
                 </option>
               ))}
             </select>
+
             <input
               id="spec-image-upload"
               type="file"
@@ -982,12 +1056,14 @@ const resetFireCollarForm = () => {
               onChange={(e) => setImageFile(e.target.files?.[0] || null)}
               style={inputStyle}
             />
+
             <input
               value={imageCaption}
               onChange={(e) => setImageCaption(e.target.value)}
               placeholder="Image caption (optional)"
               style={inputStyle}
             />
+
             <button type="submit" style={buttonStyle} disabled={uploadingImage}>
               {uploadingImage ? "Uploading..." : "Upload Image"}
             </button>
@@ -1009,13 +1085,16 @@ const resetFireCollarForm = () => {
                   <div key={developer.id} style={listItemStyle}>
                     <div>
                       <strong>{developer.name}</strong>
+
                       <div style={{ color: "#6b7280", marginTop: 4, fontSize: 14 }}>
                         Added by: {developer.created_by_email || "Unknown"}
                       </div>
+
                       <div style={{ color: "#6b7280", marginTop: 2, fontSize: 14 }}>
                         Updated by: {developer.updated_by_email || "Unknown"}
                       </div>
                     </div>
+
                     <div style={{ display: "flex", gap: 10 }}>
                       <button
                         type="button"
@@ -1024,6 +1103,7 @@ const resetFireCollarForm = () => {
                       >
                         Edit
                       </button>
+
                       <button
                         type="button"
                         onClick={() => deleteDeveloper(developer.id)}
@@ -1054,13 +1134,16 @@ const resetFireCollarForm = () => {
                   <div key={category.id} style={listItemStyle}>
                     <div>
                       <strong>{category.name}</strong>
+
                       <div style={{ color: "#6b7280", marginTop: 4, fontSize: 14 }}>
                         Added by: {category.created_by_email || "Unknown"}
                       </div>
+
                       <div style={{ color: "#6b7280", marginTop: 2, fontSize: 14 }}>
                         Updated by: {category.updated_by_email || "Unknown"}
                       </div>
                     </div>
+
                     <div style={{ display: "flex", gap: 10 }}>
                       <button
                         type="button"
@@ -1069,6 +1152,7 @@ const resetFireCollarForm = () => {
                       >
                         Edit
                       </button>
+
                       <button
                         type="button"
                         onClick={() => deleteCategory(category.id)}
@@ -1099,16 +1183,20 @@ const resetFireCollarForm = () => {
                   <div key={site.id} style={listItemStyle}>
                     <div>
                       <strong>{site.name}</strong>
+
                       <div style={{ color: "#6b7280", marginTop: 4 }}>
                         Developer: {getDeveloperName(site.developer_id)}
                       </div>
+
                       <div style={{ color: "#6b7280", marginTop: 4, fontSize: 14 }}>
                         Added by: {site.created_by_email || "Unknown"}
                       </div>
+
                       <div style={{ color: "#6b7280", marginTop: 2, fontSize: 14 }}>
                         Updated by: {site.updated_by_email || "Unknown"}
                       </div>
                     </div>
+
                     <div style={{ display: "flex", gap: 10 }}>
                       <button
                         type="button"
@@ -1117,6 +1205,7 @@ const resetFireCollarForm = () => {
                       >
                         Edit
                       </button>
+
                       <button
                         type="button"
                         onClick={() => deleteSite(site.id)}
@@ -1130,124 +1219,141 @@ const resetFireCollarForm = () => {
               </div>
             )}
           </div>
-<div style={{ ...cardStyle, marginBottom: 20 }}>
-  <button
-    type="button"
-    onClick={() => setShowFireCollars(!showFireCollars)}
-    style={sectionToggleStyle}
-  >
-    <span>Fire Collar Requirements</span>
-    <span>{showFireCollars ? "▲" : "▼"}</span>
-  </button>
 
-  {showFireCollars && (
-    <div style={{ marginTop: 16 }}>
-      <form onSubmit={saveFireCollar} style={{ marginBottom: 20 }}>
-        <h2>
-          {editingFireCollarId
-            ? "Edit Fire Collar Requirement"
-            : "Add Fire Collar Requirement"}
-        </h2>
+          <div style={{ ...cardStyle, marginBottom: 20 }}>
+            <button
+              type="button"
+              onClick={() => setShowFireCollars(!showFireCollars)}
+              style={sectionToggleStyle}
+            >
+              <span>Fire Collar Requirements</span>
+              <span>{showFireCollars ? "▲" : "▼"}</span>
+            </button>
 
-        <select
-  value={selectedDeveloperId}
-  onChange={(e) => {
-    setSelectedDeveloperId(e.target.value);
-    setFireCollarSiteId("");
-  }}
-  style={inputStyle}
->
-  <option value="">Select Developer</option>
+            {showFireCollars && (
+              <div style={{ marginTop: 16 }}>
+                <form onSubmit={saveFireCollar} style={{ marginBottom: 20 }}>
+                  <h2>
+                    {editingFireCollarId
+                      ? "Edit Fire Collar Requirement"
+                      : "Add Fire Collar Requirement"}
+                  </h2>
 
-  {developers.map((developer) => (
-    <option key={developer.id} value={developer.id}>
-      {developer.name}
-    </option>
-  ))}
-</select>
+                  <select
+                    value={fireCollarDeveloperId}
+                    onChange={(e) => {
+                      setFireCollarDeveloperId(e.target.value);
+                      setFireCollarSiteId("");
+                    }}
+                    style={inputStyle}
+                  >
+                    <option value="">Select Developer</option>
 
-<select
-  value={fireCollarDeveloperId}
-  onChange={(e) => {
-    setFireCollarDeveloperId(e.target.value);
-    setFireCollarSiteId("");
-  }}
-  style={inputStyle}
->
-  <option value="">Select Developer</option>
+                    {developers.map((developer) => (
+                      <option key={developer.id} value={developer.id}>
+                        {developer.name}
+                      </option>
+                    ))}
+                  </select>
 
-  {developers.map((developer) => (
-    <option key={developer.id} value={developer.id}>
-      {developer.name}
-    </option>
-  ))}
-</select>
+                  <select
+                    value={fireCollarSiteId}
+                    onChange={(e) => setFireCollarSiteId(e.target.value)}
+                    style={inputStyle}
+                  >
+                    <option value="">Select Site</option>
 
-<select
-  value={fireCollarSiteId}
-  onChange={(e) => setFireCollarSiteId(e.target.value)}
-  style={inputStyle}
->
-  <option value="">Select Site</option>
+                    {filteredFireCollarSites.map((site) => (
+                      <option key={site.id} value={site.id}>
+                        {site.name}
+                      </option>
+                    ))}
+                  </select>
 
-  {sites
-    .filter(
-      (site) =>
-        !fireCollarDeveloperId ||
-        String(site.developer_id) === String(fireCollarDeveloperId)
-    )
-    .map((site) => (
-      <option key={site.id} value={site.id}>
-        {site.name}
-      </option>
-    ))}
-</select>
+                  <input
+                    value={fireCollarHouseType}
+                    onChange={(e) => setFireCollarHouseType(e.target.value)}
+                    placeholder="House type"
+                    style={inputStyle}
+                  />
 
-      <div style={{ display: "grid", gap: 12 }}>
-        {fireCollars.length === 0 ? (
-          <p style={{ color: "#6b7280", margin: 0 }}>
-            No fire collar requirements added yet.
-          </p>
-        ) : (
-          fireCollars.map((item) => (
-            <div key={item.id} style={listItemStyle}>
-              <div>
-                <strong>{item.house_type}</strong>
-                <div style={{ color: "#6b7280", marginTop: 4 }}>
-                  Site: {getSiteName(item.site_id)}
-                </div>
-                <div style={{ color: "#6b7280", marginTop: 4 }}>
-                  Developer: {getDeveloperName(item.developer_id)}
-                </div>
-                <div style={{ color: "#6b7280", marginTop: 4 }}>
-                  Fire collars: {item.collar_count}
+                  <input
+                    value={fireCollarCount}
+                    onChange={(e) => setFireCollarCount(e.target.value)}
+                    type="number"
+                    min="0"
+                    placeholder="Number of fire collars required"
+                    style={inputStyle}
+                  />
+
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    <button type="submit" style={buttonStyle}>
+                      {editingFireCollarId
+                        ? "Update Requirement"
+                        : "Save Requirement"}
+                    </button>
+
+                    {editingFireCollarId && (
+                      <button
+                        type="button"
+                        onClick={resetFireCollarForm}
+                        style={{ ...buttonStyle, background: "#6b7280" }}
+                      >
+                        Cancel Edit
+                      </button>
+                    )}
+                  </div>
+                </form>
+
+                <div style={{ display: "grid", gap: 12 }}>
+                  {fireCollars.length === 0 ? (
+                    <p style={{ color: "#6b7280", margin: 0 }}>
+                      No fire collar requirements added yet.
+                    </p>
+                  ) : (
+                    fireCollars.map((item) => (
+                      <div key={item.id} style={listItemStyle}>
+                        <div>
+                          <strong>{item.house_type}</strong>
+
+                          <div style={{ color: "#6b7280", marginTop: 4 }}>
+                            Site: {getSiteName(item.site_id)}
+                          </div>
+
+                          <div style={{ color: "#6b7280", marginTop: 4 }}>
+                            Developer: {getDeveloperName(item.developer_id)}
+                          </div>
+
+                          <div style={{ color: "#6b7280", marginTop: 4 }}>
+                            Fire collars: {item.collar_count}
+                          </div>
+                        </div>
+
+                        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                          <button
+                            type="button"
+                            onClick={() => editFireCollar(item)}
+                            style={buttonStyle}
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => deleteFireCollar(item.id)}
+                            style={{ ...buttonStyle, background: "#b91c1c" }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
+            )}
+          </div>
 
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <button
-                  type="button"
-                  onClick={() => editFireCollar(item)}
-                  style={buttonStyle}
-                >
-                  Edit
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => deleteFireCollar(item.id)}
-                  style={{ ...buttonStyle, background: "#b91c1c" }}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  )}
-</div>
           <div style={cardStyle}>
             <button
               type="button"
@@ -1275,6 +1381,7 @@ const resetFireCollarForm = () => {
                     style={{ ...inputStyle, marginBottom: 0, maxWidth: 320 }}
                   >
                     <option value="">All Sites</option>
+
                     {sites.map((site) => (
                       <option key={site.id} value={site.id}>
                         {site.name}
@@ -1288,6 +1395,7 @@ const resetFireCollarForm = () => {
                     style={{ ...inputStyle, marginBottom: 0, maxWidth: 320 }}
                   >
                     <option value="">All Categories</option>
+
                     {categories.map((category) => (
                       <option key={category.id} value={category.id}>
                         {category.name}
@@ -1312,18 +1420,27 @@ const resetFireCollarForm = () => {
                 <div style={{ display: "grid", gap: 12 }}>
                   {filteredSpecsList.map((spec) => (
                     <div key={spec.id} style={specItemStyle}>
-                      <h3 style={{ marginTop: 0, marginBottom: 8 }}>{spec.title}</h3>
+                      <h3 style={{ marginTop: 0, marginBottom: 8 }}>
+                        {spec.title}
+                      </h3>
+
                       <p style={{ margin: "0 0 6px", color: "#6b7280" }}>
                         <strong>Site:</strong> {getSiteName(spec.site_id)}
                       </p>
+
                       <p style={{ margin: "0 0 6px", color: "#6b7280" }}>
-                        <strong>Category:</strong> {getCategoryName(spec.category_id)}
+                        <strong>Category:</strong>{" "}
+                        {getCategoryName(spec.category_id)}
                       </p>
+
                       <p style={{ margin: "0 0 6px", color: "#6b7280" }}>
-                        <strong>Added by:</strong> {spec.created_by_email || "Unknown"}
+                        <strong>Added by:</strong>{" "}
+                        {spec.created_by_email || "Unknown"}
                       </p>
+
                       <p style={{ margin: "0 0 12px", color: "#6b7280" }}>
-                        <strong>Updated by:</strong> {spec.updated_by_email || "Unknown"}
+                        <strong>Updated by:</strong>{" "}
+                        {spec.updated_by_email || "Unknown"}
                       </p>
 
                       <pre
@@ -1339,6 +1456,7 @@ const resetFireCollarForm = () => {
                       {getImagesForSpec(spec.id).length > 0 && (
                         <div style={{ marginTop: 16 }}>
                           <strong>Images</strong>
+
                           <div
                             style={{
                               display: "grid",
@@ -1374,6 +1492,7 @@ const resetFireCollarForm = () => {
                                     cursor: "pointer",
                                   }}
                                 />
+
                                 {image.caption && (
                                   <p
                                     style={{
@@ -1385,14 +1504,20 @@ const resetFireCollarForm = () => {
                                     {image.caption}
                                   </p>
                                 )}
+
                                 <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
                                   <button
                                     type="button"
                                     onClick={() => setLightboxImage(image.image_url)}
-                                    style={{ ...buttonStyle, flex: 1, background: "#475569" }}
+                                    style={{
+                                      ...buttonStyle,
+                                      flex: 1,
+                                      background: "#475569",
+                                    }}
                                   >
                                     View
                                   </button>
+
                                   <button
                                     type="button"
                                     onClick={() => deleteSpecImage(image)}
@@ -1426,6 +1551,7 @@ const resetFireCollarForm = () => {
                         >
                           Edit
                         </button>
+
                         <button
                           type="button"
                           onClick={() => startCopySpec(spec)}
@@ -1433,6 +1559,7 @@ const resetFireCollarForm = () => {
                         >
                           Copy
                         </button>
+
                         <button
                           type="button"
                           onClick={() => deleteSpec(spec.id)}
@@ -1464,6 +1591,7 @@ const resetFireCollarForm = () => {
             style={lightboxImageStyle}
             onClick={(e) => e.stopPropagation()}
           />
+
           <button
             type="button"
             onClick={() => setLightboxImage(null)}
