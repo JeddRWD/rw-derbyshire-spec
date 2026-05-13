@@ -54,6 +54,7 @@ const [fireCollarHouseType, setFireCollarHouseType] = useState("");
 const [fireCollarCount, setFireCollarCount] = useState("");
 const [editingFireCollarId, setEditingFireCollarId] = useState(null);
 const [showFireCollars, setShowFireCollars] = useState(false);
+  const [fireCollarDeveloperId, setFireCollarDeveloperId] = useState("");
 
   const [lightboxImage, setLightboxImage] = useState(null);
 
@@ -1164,6 +1165,23 @@ const resetFireCollarForm = () => {
 </select>
 
 <select
+  value={fireCollarDeveloperId}
+  onChange={(e) => {
+    setFireCollarDeveloperId(e.target.value);
+    setFireCollarSiteId("");
+  }}
+  style={inputStyle}
+>
+  <option value="">Select Developer</option>
+
+  {developers.map((developer) => (
+    <option key={developer.id} value={developer.id}>
+      {developer.name}
+    </option>
+  ))}
+</select>
+
+<select
   value={fireCollarSiteId}
   onChange={(e) => setFireCollarSiteId(e.target.value)}
   style={inputStyle}
@@ -1173,8 +1191,8 @@ const resetFireCollarForm = () => {
   {sites
     .filter(
       (site) =>
-        !selectedDeveloperId ||
-        String(site.developer_id) === String(selectedDeveloperId)
+        !fireCollarDeveloperId ||
+        String(site.developer_id) === String(fireCollarDeveloperId)
     )
     .map((site) => (
       <option key={site.id} value={site.id}>
@@ -1182,39 +1200,6 @@ const resetFireCollarForm = () => {
       </option>
     ))}
 </select>
-
-        <input
-          value={fireCollarHouseType}
-          onChange={(e) => setFireCollarHouseType(e.target.value)}
-          placeholder="House type"
-          style={inputStyle}
-        />
-
-        <input
-          value={fireCollarCount}
-          onChange={(e) => setFireCollarCount(e.target.value)}
-          type="number"
-          min="0"
-          placeholder="Number of fire collars required"
-          style={inputStyle}
-        />
-
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <button type="submit" style={buttonStyle}>
-            {editingFireCollarId ? "Update Requirement" : "Save Requirement"}
-          </button>
-
-          {editingFireCollarId && (
-            <button
-              type="button"
-              onClick={resetFireCollarForm}
-              style={{ ...buttonStyle, background: "#6b7280" }}
-            >
-              Cancel Edit
-            </button>
-          )}
-        </div>
-      </form>
 
       <div style={{ display: "grid", gap: 12 }}>
         {fireCollars.length === 0 ? (
