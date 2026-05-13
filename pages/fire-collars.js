@@ -1,33 +1,10 @@
-"use client";
-
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase";
-
-type Developer = {
-  id: string;
-  name: string;
-};
-
-type Site = {
-  id: string;
-  name: string;
-  developer_id: string;
-};
-
-type FireCollarRow = {
-  id: string;
-  developer_id: string;
-  site_id: string;
-  house_type: string;
-  plot_number: string | null;
-  collar_count: number;
-  notes: string | null;
-};
+import { supabase } from "../lib/supabaseClient";
 
 export default function FireCollarsPage() {
-  const [developers, setDevelopers] = useState<Developer[]>([]);
-  const [sites, setSites] = useState<Site[]>([]);
-  const [rows, setRows] = useState<FireCollarRow[]>([]);
+  const [developers, setDevelopers] = useState([]);
+  const [sites, setSites] = useState([]);
+  const [rows, setRows] = useState([]);
 
   const [developerId, setDeveloperId] = useState("");
   const [siteId, setSiteId] = useState("");
@@ -36,7 +13,7 @@ export default function FireCollarsPage() {
   const [collarCount, setCollarCount] = useState(0);
   const [notes, setNotes] = useState("");
 
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -47,19 +24,28 @@ export default function FireCollarsPage() {
   async function loadInitialData() {
     setLoading(true);
 
-    const [{ data: developersData }, { data: sitesData }, { data: collarData }] =
-      await Promise.all([
-        supabase.from("developers").select("id, name").order("name"),
-        supabase.from("sites").select("id, name, developer_id").order("name"),
-        supabase
-          .from("fire_collar_requirements")
-          .select("*")
-          .order("plot_number", { ascending: true }),
-      ]);
+    const developersResult = await supabase
+      .from("developers")
+      .select("id, name")
+      .order("name");
 
-    setDevelopers(developersData || []);
-    setSites(sitesData || []);
-    setRows(collarData || []);
+    const sitesResult = await supabase
+      .from("sites")
+      .select("id, name, developer_id")
+      .order("name");
+
+    const collarResult = await supabase
+      .from("fire_collar_requirements")
+      .select("*")
+      .order("plot_number", { ascending: true });
+
+    if (developersResult.error) alert(developersResult.error.message);
+    if (sitesResult.error) alert(sitesResult.error.message);
+    if (collarResult.error) alert(collarResult.error.message);
+
+    setDevelopers(developersResult.data || []);
+    setSites(sitesResult.data || []);
+    setRows(collarResult.data || []);
     setLoading(false);
   }
 
@@ -84,14 +70,14 @@ export default function FireCollarsPage() {
   const totalPlots = filteredRows.length;
 
   const totalHouseTypes = new Set(
-    filteredRows.map((row) => row.house_type.trim().toLowerCase())
+    filteredRows.map((row) => String(row.house_type || "").trim().toLowerCase())
   ).size;
 
-  async function handleSave(e: React.FormEvent) {
+  async function handleSave(e) {
     e.preventDefault();
 
-    if (!developerId || !siteId || !houseType || collarCount < 0) {
-      alert("Please complete developer, site, house type and collar count.");
+    if (!developerId || !siteId || !houseType) {
+      alert("Please complete developer, site and house type.");
       return;
     }
 
@@ -102,27 +88,25 @@ export default function FireCollarsPage() {
       site_id: siteId,
       house_type: houseType.trim(),
       plot_number: plotNumber.trim() || null,
-      collar_count: Number(collarCount),
+      collar_count: Number(collarCount || 0),
       notes: notes.trim() || null,
     };
 
+    let result;
+
     if (editingId) {
-      const { error } = await supabase
+      result = await supabase
         .from("fire_collar_requirements")
         .update(payload)
         .eq("id", editingId);
-
-      if (error) {
-        alert(error.message);
-      }
     } else {
-      const { error } = await supabase
-        .from("fire_collar_requirements")
-        .insert(payload);
+      result = await supabase.from("fire_collar_requirements").insert(payload);
+    }
 
-      if (error) {
-        alert(error.message);
-      }
+    if (result.error) {
+      alert(result.error.message);
+      setSaving(false);
+      return;
     }
 
     resetForm();
@@ -130,28 +114,31 @@ export default function FireCollarsPage() {
     setSaving(false);
   }
 
-  function handleEdit(row: FireCollarRow) {
+  function handleEdit(row) {
     setEditingId(row.id);
     setDeveloperId(row.developer_id);
     setSiteId(row.site_id);
-    setHouseType(row.house_type);
+    setHouseType(row.house_type || "");
     setPlotNumber(row.plot_number || "");
     setCollarCount(row.collar_count || 0);
     setNotes(row.notes || "");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   }
 
-  async function handleDelete(id: string) {
+  async function handleDelete(id) {
     const confirmed = confirm("Delete this fire collar requirement?");
     if (!confirmed) return;
 
-    const { error } = await supabase
+    const result = await supabase
       .from("fire_collar_requirements")
       .delete()
       .eq("id", id);
 
-    if (error) {
-      alert(error.message);
+    if (result.error) {
+      alert(result.error.message);
       return;
     }
 
@@ -166,12 +153,14 @@ export default function FireCollarsPage() {
     setNotes("");
   }
 
-  function getDeveloperName(id: string) {
-    return developers.find((dev) => dev.id === id)?.name || "Unknown";
+  function getDeveloperName(id) {
+    const developer = developers.find((dev) => dev.id === id);
+    return developer ? developer.name : "Unknown";
   }
 
-  function getSiteName(id: string) {
-    return sites.find((site) => site.id === id)?.name || "Unknown";
+  function getSiteName(id) {
+    const site = sites.find((item) => item.id === id);
+    return site ? site.name : "Unknown";
   }
 
   return (
@@ -182,8 +171,8 @@ export default function FireCollarsPage() {
             Fire Collar Schedule
           </h1>
           <p className="mt-2 text-slate-600">
-            Record and view how many fire collars are required for each property,
-            plot or house type.
+            Record and view how many fire collars are required for each
+            property, plot or house type.
           </p>
         </div>
 
@@ -288,9 +277,9 @@ export default function FireCollarsPage() {
               </label>
               <input
                 type="number"
-                min={0}
+                min="0"
                 value={collarCount}
-                onChange={(e) => setCollarCount(Number(e.target.value))}
+                onChange={(e) => setCollarCount(e.target.value)}
                 className="w-full rounded-xl border border-slate-300 p-3"
               />
             </div>
@@ -368,10 +357,13 @@ export default function FireCollarsPage() {
                     <th className="p-3">Actions</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {filteredRows.map((row) => (
                     <tr key={row.id} className="border-b hover:bg-slate-50">
-                      <td className="p-3">{getDeveloperName(row.developer_id)}</td>
+                      <td className="p-3">
+                        {getDeveloperName(row.developer_id)}
+                      </td>
                       <td className="p-3">{getSiteName(row.site_id)}</td>
                       <td className="p-3">{row.plot_number || "-"}</td>
                       <td className="p-3 font-medium">{row.house_type}</td>
@@ -385,6 +377,7 @@ export default function FireCollarsPage() {
                           >
                             Edit
                           </button>
+
                           <button
                             onClick={() => handleDelete(row.id)}
                             className="rounded-lg border border-red-300 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50"
