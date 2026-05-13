@@ -1,358 +1,302 @@
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { supabase } from "../lib/supabaseClient";
 
 export default function FireCollarsPage() {
   const [developers, setDevelopers] = useState([]);
   const [sites, setSites] = useState([]);
-  const [rows, setRows] = useState([]);
+  const [fireCollars, setFireCollars] = useState([]);
 
-  const [developerId, setDeveloperId] = useState("");
-  const [siteId, setSiteId] = useState("");
-  const [houseType, setHouseType] = useState("");
-  const [collarCount, setCollarCount] = useState("");
-
-  const [editingId, setEditingId] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [selectedDeveloper, setSelectedDeveloper] = useState("");
+  const [selectedSite, setSelectedSite] = useState("");
 
   useEffect(() => {
     loadData();
   }, []);
 
-  async function loadData() {
-    setLoading(true);
-
-    const developersResult = await supabase
+  const loadData = async () => {
+    const { data: devs } = await supabase
       .from("developers")
       .select("*")
       .order("name");
 
-    const sitesResult = await supabase
+    const { data: sts } = await supabase
       .from("sites")
       .select("*")
       .order("name");
 
-    const rowsResult = await supabase
+    const { data: collars } = await supabase
       .from("fire_collar_requirements")
       .select("*")
       .order("house_type");
 
-    setDevelopers(developersResult.data || []);
-    setSites(sitesResult.data || []);
-    setRows(rowsResult.data || []);
+    setDevelopers(devs || []);
+    setSites(sts || []);
+    setFireCollars(collars || []);
+  };
 
-    setLoading(false);
-  }
+  const handleDeveloperChange = (developerId) => {
+    setSelectedDeveloper(developerId);
+    setSelectedSite("");
+  };
 
-  const filteredSites = useMemo(() => {
-    if (!developerId) return sites;
-    return sites.filter((site) => site.developer_id === developerId);
-  }, [sites, developerId]);
+  const filteredSites = selectedDeveloper
+    ? sites.filter((site) => String(site.developer_id) === String(selectedDeveloper))
+    : [];
 
-  const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
-      if (developerId && row.developer_id !== developerId) return false;
-      if (siteId && row.site_id !== siteId) return false;
-      return true;
-    });
-  }, [rows, developerId, siteId]);
+  const filteredFireCollars = useMemo(() => {
+    if (!selectedDeveloper || !selectedSite) return [];
 
-  const totalCollars = filteredRows.reduce(
-    (total, row) => total + Number(row.collar_count || 0),
+    return fireCollars
+      .filter((item) => String(item.site_id) === String(selectedSite))
+      .sort((a, b) => (a.house_type || "").localeCompare(b.house_type || ""));
+  }, [selectedDeveloper, selectedSite, fireCollars]);
+
+  const totalCollars = filteredFireCollars.reduce(
+    (total, item) => total + Number(item.collar_count || 0),
     0
   );
 
-  const totalHouseTypes = new Set(
-    filteredRows.map((x) => x.house_type)
-  ).size;
+  const selectedDeveloperName =
+    developers.find((d) => String(d.id) === String(selectedDeveloper))?.name || "";
 
-  async function handleSave(e) {
-    e.preventDefault();
-
-    if (!developerId || !siteId || !houseType || !collarCount) {
-      alert("Please complete all fields");
-      return;
-    }
-
-    setSaving(true);
-
-    const payload = {
-      developer_id: developerId,
-      site_id: siteId,
-      house_type: houseType,
-      collar_count: Number(collarCount),
-    };
-
-    let result;
-
-    if (editingId) {
-      result = await supabase
-        .from("fire_collar_requirements")
-        .update(payload)
-        .eq("id", editingId);
-    } else {
-      result = await supabase
-        .from("fire_collar_requirements")
-        .insert(payload);
-    }
-
-    if (result.error) {
-      alert(result.error.message);
-      setSaving(false);
-      return;
-    }
-
-    resetForm();
-    await loadData();
-    setSaving(false);
-  }
-
-  function handleEdit(row) {
-    setEditingId(row.id);
-    setDeveloperId(row.developer_id);
-    setSiteId(row.site_id);
-    setHouseType(row.house_type);
-    setCollarCount(row.collar_count);
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  }
-
-  async function handleDelete(id) {
-    const confirmed = confirm("Delete this item?");
-    if (!confirmed) return;
-
-    await supabase
-      .from("fire_collar_requirements")
-      .delete()
-      .eq("id", id);
-
-    await loadData();
-  }
-
-  function resetForm() {
-    setEditingId(null);
-    setHouseType("");
-    setCollarCount("");
-  }
-
-  function getDeveloperName(id) {
-    return developers.find((x) => x.id === id)?.name || "-";
-  }
-
-  function getSiteName(id) {
-    return sites.find((x) => x.id === id)?.name || "-";
-  }
+  const selectedSiteName =
+    sites.find((s) => String(s.id) === String(selectedSite))?.name || "";
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
+    <>
+      <style jsx global>{`
+        body {
+          margin: 0;
+          font-family: Arial, sans-serif;
+          background: #f4f6f8;
+          color: #1f2937;
+        }
 
-        <div className="rounded-3xl bg-gradient-to-r from-slate-900 to-slate-700 p-8 text-white shadow-xl">
-          <h1 className="text-4xl font-bold">
-            Fire Collar Schedule
-          </h1>
+        @media print {
+          .no-print {
+            display: none !important;
+          }
 
-          <p className="mt-3 text-slate-200 text-lg">
-            Manage fire collar requirements across all developments and sites.
-          </p>
-        </div>
+          body {
+            background: white !important;
+          }
 
-        <div className="grid gap-5 md:grid-cols-2">
-          <div className="rounded-3xl bg-white p-6 shadow-lg">
-            <p className="text-sm font-medium uppercase tracking-wide text-slate-500">
-              Total Fire Collars
-            </p>
+          .print-card {
+            box-shadow: none !important;
+            border: 1px solid #ccc !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+        }
+      `}</style>
 
-            <p className="mt-4 text-5xl font-bold text-slate-900">
-              {totalCollars}
-            </p>
-          </div>
-
-          <div className="rounded-3xl bg-white p-6 shadow-lg">
-            <p className="text-sm font-medium uppercase tracking-wide text-slate-500">
-              House Types
-            </p>
-
-            <p className="mt-4 text-5xl font-bold text-slate-900">
-              {totalHouseTypes}
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-3xl bg-white p-6 shadow-lg">
-          <div className="mb-6 flex flex-col gap-4 md:flex-row">
-            <select
-              value={developerId}
-              onChange={(e) => {
-                setDeveloperId(e.target.value);
-                setSiteId("");
-              }}
-              className="w-full rounded-2xl border border-slate-300 bg-white p-4 text-slate-900"
-            >
-              <option value="">All Developers</option>
-
-              {developers.map((developer) => (
-                <option key={developer.id} value={developer.id}>
-                  {developer.name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={siteId}
-              onChange={(e) => setSiteId(e.target.value)}
-              className="w-full rounded-2xl border border-slate-300 bg-white p-4 text-slate-900"
-            >
-              <option value="">All Sites</option>
-
-              {filteredSites.map((site) => (
-                <option key={site.id} value={site.id}>
-                  {site.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <form
-            onSubmit={handleSave}
-            className="grid gap-4 md:grid-cols-3"
+      <div style={{ minHeight: "100vh" }}>
+        <header
+          style={{
+            background: "#ffffff",
+            borderBottom: "1px solid #e5e7eb",
+            padding: "20px 30px",
+          }}
+        >
+          <div
+            style={{
+              maxWidth: 1100,
+              margin: "0 auto",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 20,
+            }}
           >
-            <input
-              value={houseType}
-              onChange={(e) => setHouseType(e.target.value)}
-              placeholder="House Type"
-              className="rounded-2xl border border-slate-300 p-4"
-            />
+            <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+              <Image
+                src="/logo.jpg"
+                alt="RW Derbyshire Electrical"
+                width={250}
+                height={150}
+              />
 
-            <input
-              type="number"
-              value={collarCount}
-              onChange={(e) => setCollarCount(e.target.value)}
-              placeholder="Fire Collars Required"
-              className="rounded-2xl border border-slate-300 p-4"
-            />
+              <div>
+                <h1 style={{ margin: 0 }}>Fire Collar Schedule</h1>
+                <p style={{ margin: 0, color: "#6b7280", fontSize: 14 }}>
+                  Property fire collar requirements
+                </p>
+              </div>
+            </div>
 
-            <button
-              type="submit"
-              disabled={saving}
-              className="rounded-2xl bg-slate-900 p-4 font-semibold text-white transition hover:bg-slate-700"
-            >
-              {saving
-                ? "Saving..."
-                : editingId
-                ? "Update Requirement"
-                : "Add Requirement"}
-            </button>
-          </form>
-        </div>
+            <div className="no-print" style={{ display: "flex", gap: 10 }}>
+              <Link href="/">
+                <button style={buttonStyle}>Spec Hub</button>
+              </Link>
 
-        <div className="rounded-3xl bg-white p-6 shadow-lg">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900">
-                Fire Collar Requirements
-              </h2>
+              <Link href="/admin">
+                <button style={buttonStyle}>Admin Login</button>
+              </Link>
+            </div>
+          </div>
+        </header>
 
-              <p className="mt-1 text-slate-500">
-                Live overview of all fire collar requirements.
+        <main style={{ maxWidth: 1100, margin: "30px auto", padding: "0 20px" }}>
+          <div
+            className="no-print"
+            style={{
+              background: "#fff",
+              padding: 20,
+              borderRadius: 12,
+              border: "1px solid #e5e7eb",
+              marginBottom: 20,
+            }}
+          >
+            <h2>Select Developer and Site</h2>
+
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <select
+                value={selectedDeveloper}
+                onChange={(e) => handleDeveloperChange(e.target.value)}
+                style={selectStyle}
+              >
+                <option value="">Select Developer</option>
+                {developers.map((developer) => (
+                  <option key={developer.id} value={developer.id}>
+                    {developer.name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={selectedSite}
+                onChange={(e) => setSelectedSite(e.target.value)}
+                disabled={!selectedDeveloper}
+                style={selectStyle}
+              >
+                <option value="">Select Site</option>
+                {filteredSites.map((site) => (
+                  <option key={site.id} value={site.id}>
+                    {site.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedDeveloper && selectedSite && (
+              <button onClick={() => window.print()} style={{ ...buttonStyle, marginTop: 15 }}>
+                Print Now
+              </button>
+            )}
+          </div>
+
+          {!selectedDeveloper || !selectedSite ? (
+            <div style={emptyCardStyle}>
+              <h2 style={{ marginTop: 0 }}>No Site Selected</h2>
+              <p style={{ marginBottom: 0, color: "#6b7280" }}>
+                Please select both a developer and site to view fire collar requirements.
               </p>
             </div>
-
-            <button
-              onClick={() => window.print()}
-              className="rounded-2xl border border-slate-300 px-5 py-3 font-semibold text-slate-700 hover:bg-slate-100"
-            >
-              Print
-            </button>
-          </div>
-
-          {loading ? (
-            <div className="py-10 text-center text-slate-500">
-              Loading...
-            </div>
-          ) : filteredRows.length === 0 ? (
-            <div className="rounded-2xl bg-slate-50 p-10 text-center text-slate-500">
-              No fire collar requirements found.
-            </div>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-slate-200">
-              <table className="w-full">
-                <thead className="bg-slate-100">
-                  <tr>
-                    <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                      Developer
-                    </th>
+            <>
+              <div style={{ marginBottom: 20 }}>
+                <h2>
+                  {selectedDeveloperName} - {selectedSiteName}
+                </h2>
+              </div>
 
-                    <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                      Site
-                    </th>
+              <div
+                className="print-card"
+                style={{
+                  background: "#fff",
+                  padding: 20,
+                  borderRadius: 12,
+                  border: "1px solid #e5e7eb",
+                  marginBottom: 20,
+                }}
+              >
+                <h2 style={{ marginTop: 0 }}>Total Fire Collars Required</h2>
+                <p
+                  style={{
+                    fontSize: 46,
+                    fontWeight: 700,
+                    color: "#1f3b63",
+                    margin: 0,
+                  }}
+                >
+                  {totalCollars}
+                </p>
+              </div>
 
-                    <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                      House Type
-                    </th>
+              {filteredFireCollars.length === 0 ? (
+                <p>No fire collar requirements found for this site.</p>
+              ) : (
+                <div
+                  className="print-card"
+                  style={{
+                    background: "#fff",
+                    padding: 20,
+                    borderRadius: 12,
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
+                  <h2 style={{ marginTop: 0 }}>House Type Requirements</h2>
 
-                    <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                      Fire Collars
-                    </th>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr style={{ borderBottom: "2px solid #1f3b63" }}>
+                        <th style={thStyle}>House Type</th>
+                        <th style={thStyle}>Fire Collars Required</th>
+                      </tr>
+                    </thead>
 
-                    <th className="p-4 text-right text-sm font-semibold text-slate-700">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {filteredRows.map((row) => (
-                    <tr
-                      key={row.id}
-                      className="border-t border-slate-200 hover:bg-slate-50"
-                    >
-                      <td className="p-4">
-                        {getDeveloperName(row.developer_id)}
-                      </td>
-
-                      <td className="p-4">
-                        {getSiteName(row.site_id)}
-                      </td>
-
-                      <td className="p-4 font-semibold text-slate-900">
-                        {row.house_type}
-                      </td>
-
-                      <td className="p-4">
-                        <span className="rounded-full bg-slate-900 px-4 py-2 text-sm font-bold text-white">
-                          {row.collar_count}
-                        </span>
-                      </td>
-
-                      <td className="p-4">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => handleEdit(row)}
-                            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-100"
-                          >
-                            Edit
-                          </button>
-
-                          <button
-                            onClick={() => handleDelete(row.id)}
-                            className="rounded-xl border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                    <tbody>
+                      {filteredFireCollars.map((item) => (
+                        <tr key={item.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                          <td style={tdStyle}>
+                            <strong>{item.house_type}</strong>
+                          </td>
+                          <td style={tdStyle}>{item.collar_count}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
           )}
-        </div>
+        </main>
       </div>
-    </main>
+    </>
   );
 }
+
+const buttonStyle = {
+  padding: "10px 16px",
+  background: "#1f3b63",
+  color: "#fff",
+  border: "none",
+  borderRadius: 8,
+  cursor: "pointer",
+  fontWeight: 600,
+};
+
+const selectStyle = {
+  padding: 10,
+  borderRadius: 6,
+  minWidth: 220,
+  border: "1px solid #d1d5db",
+};
+
+const emptyCardStyle = {
+  background: "#fff",
+  padding: 20,
+  borderRadius: 12,
+  border: "1px solid #e5e7eb",
+};
+
+const thStyle = {
+  textAlign: "left",
+  padding: "12px 8px",
+};
+
+const tdStyle = {
+  padding: "14px 8px",
+};
